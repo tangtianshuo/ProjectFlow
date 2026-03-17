@@ -63,6 +63,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 - 2026-03-17: **增加用户体系 与我讨论该功能** (area: auth)
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260317-sez | 使用tailwind UI 的组件库，对深色和浅色的UI进行重新设计，同时需要给一个switch按钮，能够切换深浅色，深浅色切换需要有相应动画 | 2026-03-17 | a9b9b2b | [260317-sez-tailwind-ui-ui-switch](./quick/260317-sez-tailwind-ui-ui-switch/) |
+
 ---
 
-*State updated: 2026-03-17 after completing 02-light-theme-01*
+*State updated: 2026-03-17 after completing 02-light-theme-03*
