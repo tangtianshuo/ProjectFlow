@@ -29,12 +29,25 @@ function onMenuClick(view: ViewMode) {
       </div>
       <span class="text-sm font-bold text-[var(--text-primary)]">ProjectFlow</span>
     </div>
-    <button
-      @click="mobileMenuOpen = !mobileMenuOpen"
-      class="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-    >
-      <Icon :name="mobileMenuOpen ? 'x' : 'menu'" :size="22" />
-    </button>
+    <div class="flex items-center gap-1">
+      <!-- Mobile Theme Toggle -->
+      <button
+        @click="uiStore.toggleTheme"
+        class="rounded-lg p-2 transition-colors"
+        :class="uiStore.theme === 'dark' ? 'text-zinc-400 hover:bg-white/5' : 'text-amber-600 hover:bg-amber-50'"
+        :title="uiStore.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        <Icon :name="uiStore.theme === 'dark' ? 'moon' : 'sun'" :size="20" />
+      </button>
+
+      <!-- Mobile Menu Toggle -->
+      <button
+        @click="mobileMenuOpen = !mobileMenuOpen"
+        class="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+      >
+        <Icon :name="mobileMenuOpen ? 'x' : 'menu'" :size="22" />
+      </button>
+    </div>
   </div>
 
   <!-- Mobile Menu Overlay -->
@@ -94,8 +107,23 @@ function onMenuClick(view: ViewMode) {
       </button>
     </nav>
 
-    <!-- Collapse Button (Desktop only) -->
-    <div class="hidden lg:block border-t border-[var(--border-subtle)] p-3">
+    <!-- Theme Toggle & Collapse (Desktop only) -->
+    <div class="hidden lg:block border-t border-[var(--border-subtle)] p-3 space-y-2">
+      <!-- Theme Toggle -->
+      <button
+        @click="uiStore.toggleTheme"
+        class="flex w-full items-center justify-center gap-2 rounded-xl p-2.5 text-sm transition-all duration-200"
+        :class="uiStore.theme === 'dark' ? 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300' : 'text-amber-600 hover:bg-amber-50 hover:text-amber-700'"
+        :title="uiStore.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        <Icon
+          :name="uiStore.theme === 'dark' ? 'moon' : 'sun'"
+          :size="18"
+        />
+        <span v-if="!uiStore.sidebarCollapsed" class="text-xs">{{ uiStore.theme === 'dark' ? '深色模式' : '浅色模式' }}</span>
+      </button>
+
+      <!-- Collapse Button -->
       <button
         @click="uiStore.toggleSidebar"
         class="flex w-full items-center justify-center gap-2 rounded-xl p-2.5 text-sm text-[var(--text-tertiary)] transition-all duration-200 hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
