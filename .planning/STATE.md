@@ -14,7 +14,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
-| 1 | ○ Pending | 0/1 | 0% |
+| 1 | In Progress | 2/2 | 0% |
 | 2 | ○ Pending | 0/1 | 0% |
 
 ## Workflow
@@ -29,4 +29,4 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 ---
 
-*State updated: 2026-03-17 after roadmap creation*
+*State updated: 2026-03-17 after planning*

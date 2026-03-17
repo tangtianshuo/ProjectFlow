@@ -19,6 +19,10 @@
 - DOC-01: 创建暗色系设计规范文档
 - DOC-03: 标准化组件样式
 
+**Plans:**
+- [ ] 01-01-PLAN.md - 优先级标签颜色和进度条渐变
+- [ ] 01-02-PLAN.md - 图标颜色和组件标准化
+
 **Success Criteria:**
 1. 深色背景中的图标使用浅色，清晰可见
 2. 深色背景中的文字使用浅色，对比度良好
@@ -51,13 +55,14 @@
 
 ## Summary
 
-| Phase | Name | Requirements | Success Criteria |
-|-------|------|--------------|------------------|
-| 1 | 暗色系 UI 优化 | 10 | 6 |
-| 2 | 亮色系 UI 设计 | 5 | 5 |
+| Phase | Name | Requirements | Plans | Success Criteria |
+|-------|------|--------------|-------|------------------|
+| 1 | 暗色系 UI 优化 | 10 | 2 | 6 |
+| 2 | 亮色系 UI 设计 | 5 | 0 | 5 |
 
-**Total:** 2 phases | 15 requirements
+**Total:** 2 phases | 15 requirements | 2 plans
 
 ---
 
 *Roadmap created: 2026-03-17*
+*Plans updated: 2026-03-17*
