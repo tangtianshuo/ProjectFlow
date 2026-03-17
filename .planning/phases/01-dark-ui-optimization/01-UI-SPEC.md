@@ -48,9 +48,11 @@ Exceptions: none
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 | 1.6 |
-| Label | 12px | 500 | 1.4 |
+| Label | 12px | 400 | 1.4 |
 | Heading | 18px | 600 | 1.3 |
 | Display | 24px | 600 | 1.2 |
+
+**Note:** Consolidate to max 2 font weights (400 for body/label, 600 for heading/display) as per UI safety guidelines.
 
 **Source:** Pre-populated from existing `style.css` (font-family: 'Inter', 14px, line-height 1.6)
 
