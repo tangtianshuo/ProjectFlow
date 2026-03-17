@@ -44,9 +44,10 @@
 - DOC-02: 创建亮色系设计规范文档
 
 **Plans:**
-2/2 plans complete
+3/3 plans complete
 - [x] 02-01-PLAN.md - Light theme CSS variables implementation
-- [ ] 02-02-PLAN.md - Theme toggle + design specification
+- [x] 02-02-PLAN.md - Theme toggle + design specification
+- [x] 02-03-PLAN.md - Gap closure: App.vue hardcoded background fix
 
 **Success Criteria:**
 1. 亮色系主题正常显示，背景为白色/浅灰色
@@ -61,9 +62,9 @@
 
 | Phase | Name | Requirements | Plans | Success Criteria |
 |-------|------|--------------|-------|------------------|
-| 1 | 暗色系 UI 优化 | Complete    | 2 | 2/2 | Complete   | 2026-03-17 | 亮色系 UI 设计 | 5 | 2 | 5 |
+| 1 | 暗色系 UI 优化 | Complete    | 2 | 3/3 | Complete   | 2026-03-17 | 亮色系 UI 设计 | 5 | 3 | 5 |
 
-**Total:** 2 phases | 15 requirements | 4 plans
+**Total:** 2 phases | 15 requirements | 5 plans
 
 ---
 

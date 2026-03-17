@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useUiStore, type ViewMode } from "../../stores/uiStore";
 import Icon from "../ui/Icon.vue";
+import ThemeSwitch from "../ui/ThemeSwitch.vue";
 
 const uiStore = useUiStore();
 const mobileMenuOpen = ref(false);
@@ -31,14 +32,7 @@ function onMenuClick(view: ViewMode) {
     </div>
     <div class="flex items-center gap-1">
       <!-- Mobile Theme Toggle -->
-      <button
-        @click="uiStore.toggleTheme"
-        class="rounded-lg p-2 transition-colors"
-        :class="uiStore.theme === 'dark' ? 'text-zinc-400 hover:bg-white/5' : 'text-amber-600 hover:bg-amber-50'"
-        :title="uiStore.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-      >
-        <Icon :name="uiStore.theme === 'dark' ? 'moon' : 'sun'" :size="20" />
-      </button>
+      <ThemeSwitch />
 
       <!-- Mobile Menu Toggle -->
       <button
@@ -110,18 +104,9 @@ function onMenuClick(view: ViewMode) {
     <!-- Theme Toggle & Collapse (Desktop only) -->
     <div class="hidden lg:block border-t border-[var(--border-subtle)] p-3 space-y-2">
       <!-- Theme Toggle -->
-      <button
-        @click="uiStore.toggleTheme"
-        class="flex w-full items-center justify-center gap-2 rounded-xl p-2.5 text-sm transition-all duration-200"
-        :class="uiStore.theme === 'dark' ? 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300' : 'text-amber-600 hover:bg-amber-50 hover:text-amber-700'"
-        :title="uiStore.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-      >
-        <Icon
-          :name="uiStore.theme === 'dark' ? 'moon' : 'sun'"
-          :size="18"
-        />
-        <span v-if="!uiStore.sidebarCollapsed" class="text-xs">{{ uiStore.theme === 'dark' ? '深色模式' : '浅色模式' }}</span>
-      </button>
+      <div class="flex w-full items-center justify-center py-1">
+        <ThemeSwitch />
+      </div>
 
       <!-- Collapse Button -->
       <button
