@@ -62,6 +62,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 ### Pending Todos
 
 - 2026-03-17: **增加用户体系 与我讨论该功能** (area: auth)
+- 2026-03-17: **增加LLM功能，能够通过提问与对话的方式实现项目文档的编写** (area: features)
 
 ### Quick Tasks Completed
 
