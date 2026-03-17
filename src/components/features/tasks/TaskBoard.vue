@@ -6,16 +6,15 @@ import Button from "../../ui/Button.vue";
 import Modal from "../../ui/Modal.vue";
 import Input from "../../ui/Input.vue";
 import Select from "../../ui/Select.vue";
+import Icon from "../../ui/Icon.vue";
 import GanttChart from "./GanttChart.vue";
 import type { Task } from "../../../lib/api";
 
 const projectStore = useProjectStore();
 const uiStore = useUiStore();
 
-// Refresh data when switching to gantt view
 async function switchToGantt() {
   uiStore.setTaskViewMode('gantt');
-  // Ensure tasks are loaded
   if (uiStore.selectedProjectId && projectStore.tasks.length === 0) {
     await projectStore.fetchTasks(uiStore.selectedProjectId);
   }
@@ -28,7 +27,6 @@ const columns = [
   { id: 3, name: "已完成", color: "green" },
 ];
 
-// Map status to default progress
 const statusToProgress: Record<number, number> = {
   0: 0,
   1: 25,
@@ -74,7 +72,7 @@ async function createTask() {
       projectId: uiStore.selectedProjectId,
       title: newTask.value.title,
       description: newTask.value.description || undefined,
-      priority: newTask.value.priority,
+      priority: Number(newTask.value.priority),
       startDate: newTask.value.startDate || undefined,
       dueDate: newTask.value.dueDate || undefined,
     });
@@ -95,11 +93,22 @@ async function deleteTask(id: string) {
   }
 }
 
+// 辅助函数：将 RFC3339 日期转换为 YYYY-MM-DD 格式
+function formatDateForInput(dateStr: string | undefined | null): string {
+  if (!dateStr) return "";
+  // 如果已经包含 T，说明是 RFC3339 格式
+  if (dateStr.includes("T")) {
+    return dateStr.split("T")[0];
+  }
+  // 否则直接返回
+  return dateStr;
+}
+
 function openEditModal(task: Task) {
   editingTask.value = {
     ...task,
-    startDate: task.startDate || "",
-    dueDate: task.dueDate || "",
+    startDate: formatDateForInput(task.startDate),
+    dueDate: formatDateForInput(task.dueDate),
     description: task.description || "",
   };
   showEditModal.value = true;
@@ -112,7 +121,7 @@ async function saveTask() {
     await projectStore.updateTask(editingTask.value.id, {
       title: editingTask.value.title,
       description: editingTask.value.description || undefined,
-      priority: editingTask.value.priority,
+      priority: Number(editingTask.value.priority),
       startDate: editingTask.value.startDate || undefined,
       dueDate: editingTask.value.dueDate || undefined,
       progress: editingTask.value.progress,
@@ -124,16 +133,13 @@ async function saveTask() {
   }
 }
 
-// Quick status switch
 async function quickStatusChange(task: Task) {
   const currentStatus = task.status;
   let nextStatus: number;
 
   if (currentStatus === 3) {
-    // If completed, go back to todo
     nextStatus = 0;
   } else {
-    // Move to next status
     nextStatus = currentStatus + 1;
   }
 
@@ -155,9 +161,9 @@ function getStatusButtonLabel(currentStatus: number) {
 function getStatusButtonColor(currentStatus: number) {
   const colors = [
     "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30",
-    "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30",
-    "bg-green-500/20 text-green-400 hover:bg-green-500/30",
-    "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30",
+    "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30",
+    "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30",
+    "bg-zinc-500/20 text-zinc-400 hover:bg-zinc-500/30",
   ];
   return colors[currentStatus] || colors[0];
 }
@@ -168,27 +174,45 @@ function getPriorityLabel(priority: number) {
 }
 
 function getPriorityColor(priority: number) {
-  const colors = ["bg-gray-500/20 text-gray-400", "bg-gray-500/20 text-gray-400", "bg-blue-500/20 text-blue-400", "bg-orange-500/20 text-orange-400", "bg-red-500/20 text-red-400"];
+  const colors = [
+    "bg-cyan-500/15 text-cyan-400",     // priority 0: lowest
+    "bg-cyan-500/15 text-cyan-400",     // priority 1: low
+    "bg-amber-500/15 text-amber-400",   // priority 2: medium
+    "bg-red-500/15 text-red-400",       // priority 3: high
+    "bg-red-500/15 text-red-400",       // priority 4: highest
+  ];
   return colors[priority] || colors[2];
 }
 
-function getProgressColor(progress: number) {
-  if (progress >= 100) return "bg-green-500";
-  if (progress >= 75) return "bg-yellow-500";
-  if (progress >= 25) return "bg-blue-500";
-  return "bg-gray-500";
+const getProgressStyle = (progress: number) => {
+  return {
+    width: `${progress}%`,
+    background: progress >= 100
+      ? 'var(--accent-green)'
+      : `linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-cyan) 100%)`
+  };
+};
+
+function getColumnColor(color: string) {
+  const colors: Record<string, string> = {
+    gray: "bg-zinc-500",
+    blue: "bg-blue-500",
+    yellow: "bg-amber-500",
+    green: "bg-emerald-500",
+  };
+  return colors[color] || colors.gray;
 }
 </script>
 
 <template>
   <div class="flex h-full flex-col">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/5 bg-[#0d0d12]/50 px-4 lg:px-6 py-3 lg:py-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/5 bg-[#08080c]/50 px-4 lg:px-6 py-3 lg:py-4">
       <div class="min-w-0">
-        <h1 class="text-lg lg:text-xl font-bold text-white truncate">
+        <h1 class="text-lg lg:text-xl font-bold text-zinc-100 truncate">
           {{ projectStore.currentProject?.name || "任务管理" }}
         </h1>
-        <p v-if="projectStore.currentProject?.description" class="text-sm text-gray-400 truncate hidden sm:block">
+        <p v-if="projectStore.currentProject?.description" class="text-sm text-zinc-500 truncate hidden sm:block">
           {{ projectStore.currentProject.description }}
         </p>
       </div>
@@ -198,7 +222,7 @@ function getProgressColor(progress: number) {
           <button
             @click="uiStore.setTaskViewMode('kanban')"
             class="rounded-md px-2 lg:px-3 py-1 text-xs transition-colors"
-            :class="uiStore.taskViewMode === 'kanban' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:text-white'"
+            :class="uiStore.taskViewMode === 'kanban' ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'"
           >
             <span class="hidden sm:inline">看板</span>
             <span class="sm:hidden">看</span>
@@ -206,16 +230,14 @@ function getProgressColor(progress: number) {
           <button
             @click="switchToGantt()"
             class="rounded-md px-2 lg:px-3 py-1 text-xs transition-colors"
-            :class="uiStore.taskViewMode === 'gantt' ? 'bg-indigo-500 text-white' : 'text-gray-400 hover:text-white'"
+            :class="uiStore.taskViewMode === 'gantt' ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'"
           >
             <span class="hidden sm:inline">甘特图</span>
             <span class="sm:hidden">图</span>
           </button>
         </div>
-        <Button v-if="uiStore.selectedProjectId" @click="showCreateModal = true">
-          <svg class="mr-1 lg:mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
+        <Button v-if="uiStore.selectedProjectId" @click="showCreateModal = true" variant="gradient">
+          <Icon name="plus" :size="16" class="mr-1.5 lg:mr-2" />
           <span class="hidden sm:inline">新建任务</span>
           <span class="sm:hidden">新建</span>
         </Button>
@@ -226,11 +248,9 @@ function getProgressColor(progress: number) {
     <div v-if="!uiStore.selectedProjectId" class="flex flex-1 items-center justify-center">
       <div class="text-center px-4">
         <div class="mx-auto mb-4 flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center rounded-2xl bg-white/5">
-          <svg class="h-7 w-7 lg:h-8 lg:w-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
+          <Icon name="check-square" :size="28" class="text-zinc-600" />
         </div>
-        <p class="text-gray-500">请先选择一个项目</p>
+        <p class="text-zinc-500">请先选择一个项目</p>
       </div>
     </div>
 
@@ -245,69 +265,67 @@ function getProgressColor(progress: number) {
         <div
           v-for="column in columns"
           :key="column.id"
-          class="flex h-full w-64 lg:w-72 flex-col rounded-xl lg:rounded-2xl"
+          class="flex h-full w-64 lg:w-72 flex-col rounded-2xl"
         >
           <!-- Column Header -->
-          <div class="flex items-center justify-between rounded-t-xl lg:rounded-t-2xl border border-b-0 border-white/10 bg-[#12121a]/80 px-3 lg:px-4 py-2.5 lg:py-3">
+          <div class="flex items-center justify-between rounded-t-2xl border border-b-0 border-white/8 bg-[#0f0f14]/80 px-3 lg:px-4 py-2.5 lg:py-3">
             <div class="flex items-center gap-2">
-              <div :class="`h-2 w-2 rounded-full bg-${column.color}-500`" />
-              <span class="text-sm font-medium text-white">{{ column.name }}</span>
-              <span class="rounded-full bg-white/10 px-1.5 lg:px-2 py-0.5 text-xs text-gray-400">
+              <div :class="['h-2 w-2 rounded-full', getColumnColor(column.color)]" />
+              <span class="text-sm font-medium text-zinc-200">{{ column.name }}</span>
+              <span class="rounded-full bg-white/10 px-1.5 lg:px-2 py-0.5 text-xs text-zinc-500">
                 {{ tasksByStatus[column.id]?.length || 0 }}
               </span>
             </div>
           </div>
 
           <!-- Tasks -->
-          <div class="flex-1 overflow-y-auto rounded-b-xl lg:rounded-b-2xl border border-t-0 border-white/10 bg-[#12121a]/40 p-2">
+          <div class="flex-1 overflow-y-auto rounded-b-2xl border border-t-0 border-white/8 bg-[#0f0f14]/40 p-2">
             <div class="space-y-2">
               <div
                 v-for="task in tasksByStatus[column.id]"
                 :key="task.id"
-                class="group rounded-lg lg:rounded-xl border border-white/5 bg-[#1a1a25]/80 p-2.5 lg:p-3 transition-all duration-200"
-                :class="task.status === 3 ? 'opacity-75' : 'cursor-pointer hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10'"
+                class="group rounded-xl border border-white/5 bg-[#12121a]/80 p-3 transition-all duration-200"
+                :class="task.status === 3 ? 'opacity-60' : 'cursor-pointer hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10'"
                 @click="task.status !== 3 && openEditModal(task)"
               >
                 <div class="flex items-start justify-between gap-1">
-                  <h4 class="text-sm font-medium line-clamp-2" :class="task.status === 3 ? 'text-gray-400' : 'text-white'">{{ task.title }}</h4>
+                  <h4 class="text-sm font-medium line-clamp-2" :class="task.status === 3 ? 'text-zinc-500' : 'text-zinc-200'">{{ task.title }}</h4>
                   <button
                     v-if="task.status !== 3"
                     class="opacity-0 transition-opacity group-hover:opacity-100 flex-shrink-0"
                     @click.stop="deleteTask(task.id)"
                   >
-                    <svg class="h-4 w-4 text-gray-500 hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <Icon name="x" :size="14" class="text-zinc-500 hover:text-red-400" />
                   </button>
                 </div>
-                <p v-if="task.description" class="mt-1.5 text-xs text-gray-400 line-clamp-2">
+                <p v-if="task.description" class="mt-1.5 text-xs text-zinc-500 line-clamp-2">
                   {{ task.description }}
                 </p>
-                <div class="mt-2 lg:mt-3 flex flex-wrap items-center gap-1.5 lg:gap-2">
+                <div class="mt-2.5 lg:mt-3 flex flex-wrap items-center gap-1.5 lg:gap-2">
                   <span
-                    class="rounded-full px-1.5 lg:px-2 py-0.5 text-xs font-medium"
+                    class="rounded-full px-2 py-0.5 text-xs font-medium"
                     :class="getPriorityColor(task.priority)"
                   >
                     {{ getPriorityLabel(task.priority) }}
                   </span>
-                  <span v-if="task.dueDate" class="text-xs text-gray-500 truncate">
+                  <span v-if="task.dueDate" class="text-xs text-zinc-500 truncate flex items-center gap-1">
+                    <Icon name="calendar" :size="12" />
                     {{ task.dueDate.split("T")[0] }}
                   </span>
                 </div>
                 <!-- Progress bar -->
-                <div class="mt-2 flex items-center gap-2">
+                <div class="mt-2.5 flex items-center gap-2">
                   <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                     <div
-                      class="h-full rounded-full transition-all duration-300"
-                      :class="getProgressColor(task.progress)"
-                      :style="{ width: `${task.progress}%` }"
+                      class="h-full rounded-full transition-all duration-500 ease-out"
+                      :style="getProgressStyle(task.progress)"
                     />
                   </div>
-                  <span class="text-xs text-gray-500 min-w-[32px] text-right">{{ task.progress }}%</span>
+                  <span class="text-xs text-[var(--text-secondary)] min-w-[32px] text-right">{{ task.progress }}%</span>
                 </div>
                 <!-- Status button -->
                 <button
-                  class="mt-2 w-full rounded-lg py-1.5 text-xs font-medium transition-all duration-200"
+                  class="mt-2.5 w-full rounded-lg py-1.5 text-xs font-medium transition-all duration-200"
                   :class="getStatusButtonColor(task.status)"
                   @click.stop="quickStatusChange(task)"
                 >
@@ -320,49 +338,45 @@ function getProgressColor(progress: number) {
       </div>
     </div>
 
-    <!-- Gantt Chart / Kanban End -->
-
     <!-- Create Task Modal -->
     <Modal :open="showCreateModal" title="创建新任务" @close="showCreateModal = false">
       <form @submit.prevent="createTask" class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-300">任务标题</label>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务标题</label>
           <Input v-model="newTask.title" placeholder="请输入任务标题" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-300">任务描述</label>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务描述</label>
           <textarea
             v-model="newTask.description"
             placeholder="请输入任务描述（可选）"
             rows="3"
-            class="w-full rounded-lg border border-white/10 bg-[#1a1a25] px-4 py-2.5 text-sm text-white placeholder-gray-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            class="w-full rounded-lg border border-white/10 bg-[#12121a] px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">优先级</label>
+          <Select v-model="newTask.priority">
+            <option value="0">最低</option>
+            <option value="1">低</option>
+            <option value="2">中</option>
+            <option value="3">高</option>
+            <option value="4">最高</option>
+          </Select>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-300">优先级</label>
-            <Select v-model="newTask.priority">
-              <option value="0">最低</option>
-              <option value="1">低</option>
-              <option value="2">中</option>
-              <option value="3">高</option>
-              <option value="4">最高</option>
-            </Select>
+            <label class="mb-1.5 block text-sm font-medium text-zinc-300">开始日期</label>
+            <Input v-model="newTask.startDate" type="date" />
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-300">开始日期</label>
-              <Input v-model="newTask.startDate" type="date" />
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-300">截止日期</label>
-              <Input v-model="newTask.dueDate" type="date" />
-            </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-zinc-300">截止日期</label>
+            <Input v-model="newTask.dueDate" type="date" />
           </div>
         </div>
         <div class="flex justify-end gap-2 pt-4">
           <Button variant="secondary" type="button" @click="showCreateModal = false">取消</Button>
-          <Button type="submit">创建任务</Button>
+          <Button type="submit" variant="gradient">创建任务</Button>
         </div>
       </form>
     </Modal>
@@ -371,41 +385,39 @@ function getProgressColor(progress: number) {
     <Modal :open="showEditModal" title="编辑任务" @close="showEditModal = false">
       <form v-if="editingTask" @submit.prevent="saveTask" class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-300">任务标题</label>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务标题</label>
           <Input v-model="editingTask.title" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-300">任务描述</label>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务描述</label>
           <textarea
             v-model="editingTask.description"
             rows="3"
-            class="w-full rounded-lg border border-white/10 bg-[#1a1a25] px-4 py-2.5 text-sm text-white placeholder-gray-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            class="w-full rounded-lg border border-white/10 bg-[#12121a] px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">优先级</label>
+          <Select v-model="editingTask.priority">
+            <option value="0">最低</option>
+            <option value="1">低</option>
+            <option value="2">中</option>
+            <option value="3">高</option>
+            <option value="4">最高</option>
+          </Select>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-300">优先级</label>
-            <Select v-model="editingTask.priority">
-              <option value="0">最低</option>
-              <option value="1">低</option>
-              <option value="2">中</option>
-              <option value="3">高</option>
-              <option value="4">最高</option>
-            </Select>
+            <label class="mb-1.5 block text-sm font-medium text-zinc-300">开始日期</label>
+            <Input v-model="editingTask.startDate" type="date" />
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-300">开始日期</label>
-              <Input v-model="editingTask.startDate" type="date" />
-            </div>
-            <div>
-              <label class="mb-1.5 block text-sm font-medium text-gray-300">截止日期</label>
-              <Input v-model="editingTask.dueDate" type="date" />
-            </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-zinc-300">截止日期</label>
+            <Input v-model="editingTask.dueDate" type="date" />
           </div>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-300">
+          <label class="mb-1.5 block text-sm font-medium text-zinc-300">
             进度: {{ editingTask.progress }}%
           </label>
           <input
@@ -416,7 +428,7 @@ function getProgressColor(progress: number) {
             step="5"
             class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500"
           />
-          <div class="flex justify-between text-xs text-gray-500 mt-1">
+          <div class="flex justify-between text-xs text-zinc-500 mt-1">
             <span>0%</span>
             <span>50%</span>
             <span>100%</span>
@@ -424,7 +436,7 @@ function getProgressColor(progress: number) {
         </div>
         <div class="flex justify-end gap-2 pt-4">
           <Button variant="secondary" type="button" @click="showEditModal = false">取消</Button>
-          <Button type="submit">保存</Button>
+          <Button type="submit" variant="gradient">保存</Button>
         </div>
       </form>
     </Modal>
