@@ -16,7 +16,7 @@
 - [ ] **LIGHT-01**: 实现亮色系主题（白色/浅灰色背景）
 - [ ] **LIGHT-02**: 亮色系使用柔和、不刺眼的图标颜色
 - [ ] **LIGHT-03**: 两套主题视觉风格逻辑一致
-- [ ] **LIGHT-04**: 支持暗色/亮色主题切换功能
+- [x] **LIGHT-04**: 支持暗色/亮色主题切换功能
 
 ### 优先级标签
 
@@ -32,7 +32,7 @@
 ### UI 设计规范
 
 - [x] **DOC-01**: 创建暗色系设计规范文档（颜色、间距、字体等）
-- [ ] **DOC-02**: 创建亮色系设计规范文档（与暗色系逻辑一致）
+- [x] **DOC-02**: 创建亮色系设计规范文档（与暗色系逻辑一致）
 - [x] **DOC-03**: 标准化组件样式（Button、Input、Select、Tag 等）
 
 ## v2 Requirements
@@ -56,14 +56,14 @@
 | LIGHT-01 | Phase 2 | Pending |
 | LIGHT-02 | Phase 2 | Pending |
 | LIGHT-03 | Phase 2 | Pending |
-| LIGHT-04 | Phase 2 | Pending |
+| LIGHT-04 | Phase 2 | Complete |
 | PRIO-01 | Phase 1 | Complete |
 | PRIO-02 | Phase 1 | Complete |
 | PRIO-03 | Phase 1 | Complete |
 | PROG-01 | Phase 1 | Complete |
 | PROG-02 | Phase 1 | Complete |
 | DOC-01 | Phase 1 | Complete |
-| DOC-02 | Phase 2 | Pending |
+| DOC-02 | Phase 2 | Complete |
 | DOC-03 | Phase 1 | Complete |
 
 **Coverage:**
