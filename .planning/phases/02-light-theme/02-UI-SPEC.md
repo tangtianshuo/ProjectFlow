@@ -1,10 +1,11 @@
 ---
 phase: 2
 slug: light-theme
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-03-17
+reviewed_at: 2026-03-17
 ---
 
 # Phase 2 — UI Design Contract
