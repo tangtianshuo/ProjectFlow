@@ -20,7 +20,7 @@
 - DOC-03: 标准化组件样式
 
 **Plans:**
-- [ ] 01-01-PLAN.md - 优先级标签颜色和进度条渐变
+2/2 plans complete
 - [ ] 01-02-PLAN.md - 图标颜色和组件标准化
 
 **Success Criteria:**
@@ -57,7 +57,7 @@
 
 | Phase | Name | Requirements | Plans | Success Criteria |
 |-------|------|--------------|-------|------------------|
-| 1 | 暗色系 UI 优化 | 10 | 2 | 6 |
+| 1 | 暗色系 UI 优化 | Complete    | 2026-03-17 | 6 |
 | 2 | 亮色系 UI 设计 | 5 | 0 | 5 |
 
 **Total:** 2 phases | 15 requirements | 2 plans

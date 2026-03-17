@@ -7,9 +7,9 @@
 
 ### 暗色系 UI
 
-- [ ] **DARK-01**: 优化深色背景中的图标颜色，使用浅色图标提高对比度
-- [ ] **DARK-02**: 优化深色背景中的文字颜色，使用浅色文字确保清晰可见
-- [ ] **DARK-03**: 暗色系整体视觉协调统一
+- [x] **DARK-01**: 优化深色背景中的图标颜色，使用浅色图标提高对比度
+- [x] **DARK-02**: 优化深色背景中的文字颜色，使用浅色文字确保清晰可见
+- [x] **DARK-03**: 暗色系整体视觉协调统一
 
 ### 亮色系 UI
 
@@ -20,20 +20,20 @@
 
 ### 优先级标签
 
-- [ ] **PRIO-01**: 优先级高/最高显示为红色标签
-- [ ] **PRIO-02**: 优先级中显示为黄色/橙色标签
-- [ ] **PRIO-03**: 优先级低/最低显示为蓝色/青色标签
+- [x] **PRIO-01**: 优先级高/最高显示为红色标签
+- [x] **PRIO-02**: 优先级中显示为黄色/橙色标签
+- [x] **PRIO-03**: 优先级低/最低显示为蓝色/青色标签
 
 ### 进度条
 
-- [ ] **PROG-01**: 进度条使用蓝色渐变效果
-- [ ] **PROG-02**: 渐变效果能体现进度变化
+- [x] **PROG-01**: 进度条使用蓝色渐变效果
+- [x] **PROG-02**: 渐变效果能体现进度变化
 
 ### UI 设计规范
 
-- [ ] **DOC-01**: 创建暗色系设计规范文档（颜色、间距、字体等）
+- [x] **DOC-01**: 创建暗色系设计规范文档（颜色、间距、字体等）
 - [ ] **DOC-02**: 创建亮色系设计规范文档（与暗色系逻辑一致）
-- [ ] **DOC-03**: 标准化组件样式（Button、Input、Select、Tag 等）
+- [x] **DOC-03**: 标准化组件样式（Button、Input、Select、Tag 等）
 
 ## v2 Requirements
 
@@ -50,21 +50,21 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DARK-01 | Phase 1 | Pending |
-| DARK-02 | Phase 1 | Pending |
-| DARK-03 | Phase 1 | Pending |
+| DARK-01 | Phase 1 | Complete |
+| DARK-02 | Phase 1 | Complete |
+| DARK-03 | Phase 1 | Complete |
 | LIGHT-01 | Phase 2 | Pending |
 | LIGHT-02 | Phase 2 | Pending |
 | LIGHT-03 | Phase 2 | Pending |
 | LIGHT-04 | Phase 2 | Pending |
-| PRIO-01 | Phase 1 | Pending |
-| PRIO-02 | Phase 1 | Pending |
-| PRIO-03 | Phase 1 | Pending |
-| PROG-01 | Phase 1 | Pending |
-| PROG-02 | Phase 1 | Pending |
-| DOC-01 | Phase 1 | Pending |
+| PRIO-01 | Phase 1 | Complete |
+| PRIO-02 | Phase 1 | Complete |
+| PRIO-03 | Phase 1 | Complete |
+| PROG-01 | Phase 1 | Complete |
+| PROG-02 | Phase 1 | Complete |
+| DOC-01 | Phase 1 | Complete |
 | DOC-02 | Phase 2 | Pending |
-| DOC-03 | Phase 1 | Pending |
+| DOC-03 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
