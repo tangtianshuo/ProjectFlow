@@ -14,7 +14,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
-| 1 | In Progress | 2/2 | 0% |
+| 1 | Completed | 2/2 | 100% |
 | 2 | ○ Pending | 0/1 | 0% |
 
 ## Workflow
