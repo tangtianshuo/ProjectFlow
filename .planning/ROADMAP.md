@@ -21,7 +21,6 @@
 
 **Plans:**
 2/2 plans complete
-- [ ] 01-02-PLAN.md - 图标颜色和组件标准化
 
 **Success Criteria:**
 1. 深色背景中的图标使用浅色，清晰可见
@@ -44,6 +43,11 @@
 - LIGHT-04: 支持暗色/亮色主题切换功能
 - DOC-02: 创建亮色系设计规范文档
 
+**Plans:**
+2/2 plans
+- [ ] 02-01-PLAN.md - Light theme CSS variables implementation
+- [ ] 02-02-PLAN.md - Theme toggle + design specification
+
 **Success Criteria:**
 1. 亮色系主题正常显示，背景为白色/浅灰色
 2. 亮色系图标柔和协调，不刺眼
@@ -57,10 +61,10 @@
 
 | Phase | Name | Requirements | Plans | Success Criteria |
 |-------|------|--------------|-------|------------------|
-| 1 | 暗色系 UI 优化 | Complete    | 2026-03-17 | 6 |
-| 2 | 亮色系 UI 设计 | 5 | 0 | 5 |
+| 1 | 暗色系 UI 优化 | Complete    | 2 | 2026-03-17 |
+| 2 | 亮色系 UI 设计 | 5 | 2 | 5 |
 
-**Total:** 2 phases | 15 requirements | 2 plans
+**Total:** 2 phases | 15 requirements | 4 plans
 
 ---
 
