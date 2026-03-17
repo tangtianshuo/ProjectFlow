@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { projectApi, taskApi, documentApi, type Project, type Task, type Document } from "../../../lib/api";
 import Button from "../../ui/Button.vue";
+import Icon from "../../ui/Icon.vue";
 
 const deletedProjects = ref<Project[]>([]);
 const deletedTasks = ref<Task[]>([]);
@@ -63,94 +64,112 @@ onMounted(() => {
   <div class="p-4 lg:p-6">
     <!-- Header -->
     <div class="mb-6 lg:mb-8">
-      <h1 class="text-xl lg:text-2xl font-bold text-white">回收站</h1>
-      <p class="mt-1 text-sm text-gray-400">查看和管理已删除的项目、任务和文档</p>
+      <h1 class="text-xl lg:text-2xl font-bold text-[var(--text-primary)]">回收站</h1>
+      <p class="mt-1 text-sm text-[var(--text-secondary)]">查看和管理已删除的项目、任务和文档</p>
     </div>
 
     <!-- Tabs -->
-    <div class="mb-4 flex border-b border-white/10">
+    <div class="mb-4 flex border-b border-[var(--border-default)]">
       <button
         @click="activeTab = 'projects'"
-        class="px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === 'projects' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'"
+        class="px-4 py-2.5 text-sm font-medium transition-colors"
+        :class="activeTab === 'projects' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
       >
         项目 ({{ deletedProjects.length }})
       </button>
       <button
         @click="activeTab = 'tasks'"
-        class="px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === 'tasks' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'"
+        class="px-4 py-2.5 text-sm font-medium transition-colors"
+        :class="activeTab === 'tasks' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
       >
         任务 ({{ deletedTasks.length }})
       </button>
       <button
         @click="activeTab = 'documents'"
-        class="px-4 py-2 text-sm font-medium transition-colors"
-        :class="activeTab === 'documents' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-gray-400 hover:text-white'"
+        class="px-4 py-2.5 text-sm font-medium transition-colors"
+        :class="activeTab === 'documents' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
       >
         文档 ({{ deletedDocuments.length }})
       </button>
     </div>
 
     <!-- Content -->
-    <div v-if="loading" class="py-12 text-center text-gray-500">
+    <div v-if="loading" class="py-12 text-center text-[var(--text-secondary)]">
       加载中...
     </div>
 
     <div v-else-if="activeTab === 'projects'" class="space-y-3">
-      <div v-if="deletedProjects.length === 0" class="py-12 text-center text-gray-500">
+      <div v-if="deletedProjects.length === 0" class="py-12 text-center text-[var(--text-secondary)]">
         暂无已删除的项目
       </div>
       <div
         v-for="project in deletedProjects"
         :key="project.id"
-        class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-4"
+        class="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/50 p-4 transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
       >
-        <div>
-          <h3 class="font-medium text-white">{{ project.name }}</h3>
-          <p v-if="project.description" class="text-sm text-gray-400">{{ project.description }}</p>
-          <p class="text-xs text-gray-500 mt-1">删除于: {{ formatDate(project.deletedAt) }}</p>
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20">
+            <Icon name="folder-kanban" :size="18" class="text-indigo-400" />
+          </div>
+          <div>
+            <h3 class="font-medium text-[var(--text-primary)]">{{ project.name }}</h3>
+            <p v-if="project.description" class="text-sm text-[var(--text-secondary)]">{{ project.description }}</p>
+            <p class="text-xs text-[var(--text-tertiary)] mt-1">删除于: {{ formatDate(project.deletedAt) }}</p>
+          </div>
         </div>
-        <Button size="sm" @click="restoreProject(project.id)">
+        <Button size="sm" variant="secondary" @click="restoreProject(project.id)">
+          <Icon name="rotate-ccw" :size="14" class="mr-1.5" />
           还原
         </Button>
       </div>
     </div>
 
     <div v-else-if="activeTab === 'tasks'" class="space-y-3">
-      <div v-if="deletedTasks.length === 0" class="py-12 text-center text-gray-500">
+      <div v-if="deletedTasks.length === 0" class="py-12 text-center text-[var(--text-secondary)]">
         暂无已删除的任务
       </div>
       <div
         v-for="task in deletedTasks"
         :key="task.id"
-        class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-4"
+        class="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/50 p-4 transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
       >
-        <div>
-          <h3 class="font-medium text-white">{{ task.title }}</h3>
-          <p v-if="task.description" class="text-sm text-gray-400">{{ task.description }}</p>
-          <p class="text-xs text-gray-500 mt-1">删除于: {{ formatDate(task.deletedAt) }}</p>
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+            <Icon name="check-square" :size="18" class="text-blue-400" />
+          </div>
+          <div>
+            <h3 class="font-medium text-[var(--text-primary)]">{{ task.title }}</h3>
+            <p v-if="task.description" class="text-sm text-[var(--text-secondary)]">{{ task.description }}</p>
+            <p class="text-xs text-[var(--text-tertiary)] mt-1">删除于: {{ formatDate(task.deletedAt) }}</p>
+          </div>
         </div>
-        <Button size="sm" @click="restoreTask(task.id)">
+        <Button size="sm" variant="secondary" @click="restoreTask(task.id)">
+          <Icon name="rotate-ccw" :size="14" class="mr-1.5" />
           还原
         </Button>
       </div>
     </div>
 
     <div v-else-if="activeTab === 'documents'" class="space-y-3">
-      <div v-if="deletedDocuments.length === 0" class="py-12 text-center text-gray-500">
+      <div v-if="deletedDocuments.length === 0" class="py-12 text-center text-[var(--text-secondary)]">
         暂无已删除的文档
       </div>
       <div
         v-for="doc in deletedDocuments"
         :key="doc.id"
-        class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 p-4"
+        class="flex items-center justify-between rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-tertiary)]/50 p-4 transition-all duration-200 hover:bg-[var(--bg-tertiary)]"
       >
-        <div>
-          <h3 class="font-medium text-white">{{ doc.title }}</h3>
-          <p class="text-xs text-gray-500 mt-1">删除于: {{ formatDate(doc.deletedAt) }}</p>
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
+            <Icon name="file-text" :size="18" class="text-emerald-400" />
+          </div>
+          <div>
+            <h3 class="font-medium text-[var(--text-primary)]">{{ doc.title }}</h3>
+            <p class="text-xs text-[var(--text-tertiary)] mt-1">删除于: {{ formatDate(doc.deletedAt) }}</p>
+          </div>
         </div>
-        <Button size="sm" @click="restoreDocument(doc.id)">
+        <Button size="sm" variant="secondary" @click="restoreDocument(doc.id)">
+          <Icon name="rotate-ccw" :size="14" class="mr-1.5" />
           还原
         </Button>
       </div>

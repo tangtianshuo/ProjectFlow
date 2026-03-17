@@ -207,22 +207,22 @@ function getColumnColor(color: string) {
 <template>
   <div class="flex h-full flex-col">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/5 bg-[#08080c]/50 px-4 lg:px-6 py-3 lg:py-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 px-4 lg:px-6 py-3 lg:py-4">
       <div class="min-w-0">
-        <h1 class="text-lg lg:text-xl font-bold text-zinc-100 truncate">
+        <h1 class="text-lg lg:text-xl font-bold text-[var(--text-primary)] truncate">
           {{ projectStore.currentProject?.name || "任务管理" }}
         </h1>
-        <p v-if="projectStore.currentProject?.description" class="text-sm text-zinc-500 truncate hidden sm:block">
+        <p v-if="projectStore.currentProject?.description" class="text-sm text-[var(--text-secondary)] truncate hidden sm:block">
           {{ projectStore.currentProject.description }}
         </p>
       </div>
       <div class="flex gap-2">
         <!-- View Toggle -->
-        <div v-if="uiStore.selectedProjectId" class="flex rounded-lg bg-white/5 p-0.5">
+        <div v-if="uiStore.selectedProjectId" class="flex rounded-lg bg-[var(--bg-tertiary)] p-0.5">
           <button
             @click="uiStore.setTaskViewMode('kanban')"
             class="rounded-md px-2 lg:px-3 py-1 text-xs transition-colors"
-            :class="uiStore.taskViewMode === 'kanban' ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'"
+            :class="uiStore.taskViewMode === 'kanban' ? 'bg-indigo-500 text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           >
             <span class="hidden sm:inline">看板</span>
             <span class="sm:hidden">看</span>
@@ -230,7 +230,7 @@ function getColumnColor(color: string) {
           <button
             @click="switchToGantt()"
             class="rounded-md px-2 lg:px-3 py-1 text-xs transition-colors"
-            :class="uiStore.taskViewMode === 'gantt' ? 'bg-indigo-500 text-white' : 'text-zinc-400 hover:text-zinc-200'"
+            :class="uiStore.taskViewMode === 'gantt' ? 'bg-indigo-500 text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           >
             <span class="hidden sm:inline">甘特图</span>
             <span class="sm:hidden">图</span>
@@ -247,10 +247,10 @@ function getColumnColor(color: string) {
     <!-- No Project Selected -->
     <div v-if="!uiStore.selectedProjectId" class="flex flex-1 items-center justify-center">
       <div class="text-center px-4">
-        <div class="mx-auto mb-4 flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center rounded-2xl bg-white/5">
-          <Icon name="check-square" :size="28" class="text-zinc-600" />
+        <div class="mx-auto mb-4 flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center rounded-2xl bg-[var(--bg-tertiary)]">
+          <Icon name="check-square" :size="28" class="text-[var(--text-tertiary)]" />
         </div>
-        <p class="text-zinc-500">请先选择一个项目</p>
+        <p class="text-[var(--text-secondary)]">请先选择一个项目</p>
       </div>
     </div>
 
@@ -268,37 +268,37 @@ function getColumnColor(color: string) {
           class="flex h-full w-64 lg:w-72 flex-col rounded-2xl"
         >
           <!-- Column Header -->
-          <div class="flex items-center justify-between rounded-t-2xl border border-b-0 border-white/8 bg-[#0f0f14]/80 px-3 lg:px-4 py-2.5 lg:py-3">
+          <div class="flex items-center justify-between rounded-t-2xl border border-b-0 border-[var(--border-default)] bg-[var(--bg-card)] px-3 lg:px-4 py-2.5 lg:py-3">
             <div class="flex items-center gap-2">
               <div :class="['h-2 w-2 rounded-full', getColumnColor(column.color)]" />
-              <span class="text-sm font-medium text-zinc-200">{{ column.name }}</span>
-              <span class="rounded-full bg-white/10 px-1.5 lg:px-2 py-0.5 text-xs text-zinc-500">
+              <span class="text-sm font-medium text-[var(--text-primary)]">{{ column.name }}</span>
+              <span class="rounded-full bg-[var(--bg-tertiary)] px-1.5 lg:px-2 py-0.5 text-xs text-[var(--text-secondary)]">
                 {{ tasksByStatus[column.id]?.length || 0 }}
               </span>
             </div>
           </div>
 
           <!-- Tasks -->
-          <div class="flex-1 overflow-y-auto rounded-b-2xl border border-t-0 border-white/8 bg-[#0f0f14]/40 p-2">
+          <div class="flex-1 overflow-y-auto rounded-b-2xl border border-t-0 border-[var(--border-default)] bg-[var(--bg-tertiary)]/30 p-2">
             <div class="space-y-2">
               <div
                 v-for="task in tasksByStatus[column.id]"
                 :key="task.id"
-                class="group rounded-xl border border-white/5 bg-[#12121a]/80 p-3 transition-all duration-200"
+                class="group rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-card)] p-3 transition-all duration-200"
                 :class="task.status === 3 ? 'opacity-60' : 'cursor-pointer hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10'"
                 @click="task.status !== 3 && openEditModal(task)"
               >
                 <div class="flex items-start justify-between gap-1">
-                  <h4 class="text-sm font-medium line-clamp-2" :class="task.status === 3 ? 'text-zinc-500' : 'text-zinc-200'">{{ task.title }}</h4>
+                  <h4 class="text-sm font-medium line-clamp-2" :class="task.status === 3 ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'">{{ task.title }}</h4>
                   <button
                     v-if="task.status !== 3"
                     class="opacity-0 transition-opacity group-hover:opacity-100 flex-shrink-0"
                     @click.stop="deleteTask(task.id)"
                   >
-                    <Icon name="x" :size="14" class="text-zinc-500 hover:text-red-400" />
+                    <Icon name="x" :size="14" class="text-[var(--text-tertiary)] hover:text-red-400" />
                   </button>
                 </div>
-                <p v-if="task.description" class="mt-1.5 text-xs text-zinc-500 line-clamp-2">
+                <p v-if="task.description" class="mt-1.5 text-xs text-[var(--text-secondary)] line-clamp-2">
                   {{ task.description }}
                 </p>
                 <div class="mt-2.5 lg:mt-3 flex flex-wrap items-center gap-1.5 lg:gap-2">
@@ -308,14 +308,14 @@ function getColumnColor(color: string) {
                   >
                     {{ getPriorityLabel(task.priority) }}
                   </span>
-                  <span v-if="task.dueDate" class="text-xs text-zinc-500 truncate flex items-center gap-1">
+                  <span v-if="task.dueDate" class="text-xs text-[var(--text-secondary)] truncate flex items-center gap-1">
                     <Icon name="calendar" :size="12" />
                     {{ task.dueDate.split("T")[0] }}
                   </span>
                 </div>
                 <!-- Progress bar -->
                 <div class="mt-2.5 flex items-center gap-2">
-                  <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div class="flex-1 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
                     <div
                       class="h-full rounded-full transition-all duration-500 ease-out"
                       :style="getProgressStyle(task.progress)"
@@ -342,20 +342,20 @@ function getColumnColor(color: string) {
     <Modal :open="showCreateModal" title="创建新任务" @close="showCreateModal = false">
       <form @submit.prevent="createTask" class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务标题</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">任务标题</label>
           <Input v-model="newTask.title" placeholder="请输入任务标题" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务描述</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">任务描述</label>
           <textarea
             v-model="newTask.description"
             placeholder="请输入任务描述（可选）"
             rows="3"
-            class="w-full rounded-lg border border-white/10 bg-[#12121a] px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            class="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-tertiary)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">优先级</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">优先级</label>
           <Select v-model="newTask.priority">
             <option value="0">最低</option>
             <option value="1">低</option>
@@ -366,11 +366,11 @@ function getColumnColor(color: string) {
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">开始日期</label>
+            <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">开始日期</label>
             <Input v-model="newTask.startDate" type="date" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">截止日期</label>
+            <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">截止日期</label>
             <Input v-model="newTask.dueDate" type="date" />
           </div>
         </div>
@@ -385,19 +385,19 @@ function getColumnColor(color: string) {
     <Modal :open="showEditModal" title="编辑任务" @close="showEditModal = false">
       <form v-if="editingTask" @submit.prevent="saveTask" class="space-y-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务标题</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">任务标题</label>
           <Input v-model="editingTask.title" required />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">任务描述</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">任务描述</label>
           <textarea
             v-model="editingTask.description"
             rows="3"
-            class="w-full rounded-lg border border-white/10 bg-[#12121a] px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            class="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-tertiary)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-all duration-200 focus:border-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">优先级</label>
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">优先级</label>
           <Select v-model="editingTask.priority">
             <option value="0">最低</option>
             <option value="1">低</option>
@@ -408,16 +408,16 @@ function getColumnColor(color: string) {
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">开始日期</label>
+            <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">开始日期</label>
             <Input v-model="editingTask.startDate" type="date" />
           </div>
           <div>
-            <label class="mb-1.5 block text-sm font-medium text-zinc-300">截止日期</label>
+            <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">截止日期</label>
             <Input v-model="editingTask.dueDate" type="date" />
           </div>
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium text-zinc-300">
+          <label class="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
             进度: {{ editingTask.progress }}%
           </label>
           <input
@@ -426,9 +426,9 @@ function getColumnColor(color: string) {
             min="0"
             max="100"
             step="5"
-            class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            class="w-full h-2 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
           />
-          <div class="flex justify-between text-xs text-zinc-500 mt-1">
+          <div class="flex justify-between text-xs text-[var(--text-secondary)] mt-1">
             <span>0%</span>
             <span>50%</span>
             <span>100%</span>
