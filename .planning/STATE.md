@@ -57,4 +57,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 ---
 
+## Accumulated Context
+
+### Pending Todos
+
+- 2026-03-17: **增加用户体系 与我讨论该功能** (area: auth)
+
+---
+
 *State updated: 2026-03-17 after completing 02-light-theme-01*
