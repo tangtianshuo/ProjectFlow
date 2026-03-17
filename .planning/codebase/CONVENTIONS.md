@@ -5,157 +5,137 @@
 ## Naming Patterns
 
 **Files:**
-- Components: PascalCase with descriptive names (e.g., `Button.vue`, `GanttChart.vue`, `TaskBoard.vue`)
-- Stores: camelCase with `Store` suffix (e.g., `uiStore.ts`, `documentStore.ts`, `projectStore.ts`)
-- Utilities/API: camelCase (e.g., `api.ts`)
+- Components: PascalCase (e.g., `Button.vue`, `ProjectList.vue`, `TaskBoard.vue`)
+- Stores: camelCase with Store suffix (e.g., `projectStore.ts`, `uiStore.ts`)
+- API: camelCase (e.g., `api.ts`)
+- Tests: Original name + `.test.ts` suffix (e.g., `Button.test.ts`, `Input.test.ts`)
 
 **Functions:**
-- Vue component functions: camelCase (e.g., `handleClick`, `toggleSidebar`)
-- Store actions: camelCase (e.g., `setView`, `selectProject`)
+- Vue component functions: camelCase (e.g., `handleClick`, `onInput`, `createProject`)
+- Store actions: camelCase (e.g., `fetchProjects`, `createProject`, `deleteTask`)
+- Event handlers: `on` prefix for event handlers (e.g., `onInput`, `onBackdropClick`)
 
 **Variables:**
-- Local variables: camelCase (e.g., `currentView`, `taskViewMode`)
-- Props: camelCase (e.g., `variant`, `disabled`, `loading`)
-- Refs: camelCase (e.g., `sidebarCollapsed`)
+- camelCase (e.g., `newProject`, `showCreateModal`, `allProjectTasks`)
+- Reactive refs: suffix with type or omit (e.g., `const showCreateModal = ref(false)`)
+- Props interfaces: PascalCase with `Props` suffix (e.g., `interface Props`)
 
 **Types:**
 - Interfaces: PascalCase (e.g., `Project`, `Task`, `CreateProjectRequest`)
 - Type aliases: PascalCase (e.g., `ViewMode`, `TaskViewMode`)
+- Enums: Not used - using literal types or unions instead
 
 ## Code Style
 
 **Formatting:**
-- Tool: Not explicitly configured (using default Vue/Vite patterns)
-- Indentation: 2 spaces (based on source files)
-- Quotes: Double quotes for strings in TypeScript
+- Tool: Built-in Vite + TypeScript (no explicit Prettier config found)
+- Indentation: 2 spaces
+- Quotes: Double quotes for strings
+- Semicolons: Not used in Vue SFC
 
 **Linting:**
-- Not explicitly configured (no ESLint config detected)
-- TypeScript strict mode enabled (`strict: true`)
-- Unused variables and parameters flagged (`noUnusedLocals`, `noUnusedParameters`)
+- Tool: TypeScript compiler with strict mode
+- Key rules in `tsconfig.json`:
+  - `strict: true` - full type checking
+  - `noUnusedLocals: true` - prevent unused variables
+  - `noUnusedParameters: true` - prevent unused parameters
+  - `noFallthroughCasesInSwitch: true` - enforce switch completeness
+  - `isolatedModules: true` - ensure cross-file imports are valid
+
+**TypeScript Configuration:**
+- Target: ES2020
+- Module: ESNext (bundler mode)
+- Strict mode enabled
 
 ## Import Organization
 
-**Order (observed pattern):**
-1. Vue built-ins (e.g., `computed`, `ref`, `defineProps`, `defineEmits`)
-2. External libraries (e.g., `@vue/test-utils`, `pinia`)
-3. Internal modules (e.g., `./Button.vue`, `../stores/uiStore`)
+**Order (within Vue SFC script):**
+1. Vue core imports (e.g., `import { ref, computed } from "vue"`)
+2. Store imports (e.g., `import { useProjectStore } from "../../../stores/projectStore"`)
+3. API/lib imports (e.g., `import { taskApi, type Task } from "../../../lib/api"`)
+4. Component imports (e.g., `import Button from "../../ui/Button.vue"`)
 
 **Path Aliases:**
-- `@` maps to `src/` directory (configured in `vite.config.ts` and `vitest.config.ts`)
-
-Example from `src/stores/uiStore.ts`:
-```typescript
-import { defineStore } from "pinia";
-import { ref } from "vue";
-```
+- `@` alias configured in `vite.config.ts` pointing to `src/`
+- Example: `import { useUiStore } from "@/stores/uiStore"`
 
 ## Error Handling
 
 **Patterns:**
-- Conditional guards in handlers (e.g., `if (!props.disabled && !props.loading)`)
-- Type-safe optional parameters using TypeScript
-- Null coalescing where needed
-
-Example from `src/components/ui/Button.vue`:
-```typescript
-function handleClick(event: MouseEvent) {
-  if (!props.disabled && !props.loading) {
-    emit("click", event);
+- Try-catch blocks for async operations (see `src/components/features/projects/ProjectList.vue`):
+  ```typescript
+  try {
+    const tasks = await taskApi.getByProject(project.id);
+    allProjectTasks.value[project.id] = tasks;
+  } catch (e) {
+    console.error(`Failed to fetch tasks for project ${project.id}:`, e);
   }
-}
-```
+  ```
+- Store error state: `error.value = String(e)` pattern in stores
+- User-facing errors: Display error message or fallback to console.error
+- No global error boundary implemented
+
+**Validation:**
+- Form validation using HTML5 `required` attribute
+- Programmatic validation before API calls (e.g., `if (!newProject.value.name.trim()) return`)
 
 ## Logging
 
-**Framework:** Console (no logging library detected)
+**Framework:** console API
 
 **Patterns:**
-- Minimal logging in production code
-- Focus on silent operations with user feedback via UI
+- Error logging: `console.error("Failed to create project:", e)`
+- Error with context: `console.error(\`Failed to fetch tasks for project ${project.id}:\`, e)`
+- No structured logging library configured
 
 ## Comments
 
 **When to Comment:**
-- Type definitions with JSDoc comments for API interfaces (e.g., `src/lib/api.ts`)
+- No explicit comment guidelines found
+- Code tends to be self-documenting with clear variable/function names
+- Complex logic may lack inline comments
 
 **JSDoc/TSDoc:**
-- Used for API type definitions
-
-Example from `src/lib/api.ts`:
-```typescript
-// Types
-export interface Project {
-  id: string;
-  name: string;
-  // ...
-}
-```
+- Not actively used
+- Types defined via TypeScript interfaces
 
 ## Function Design
 
-**Size:** Keep components focused with computed properties for complex logic
+**Size:**
+- Functions tend to be concise (< 30 lines)
+- Complex operations broken into smaller helper functions (e.g., `getProgressColor`, `getProjectActionLabel`)
 
-**Parameters:** Use TypeScript interfaces for request/response types
+**Parameters:**
+- TypeScript interfaces for complex objects (e.g., `CreateProjectRequest`)
+- Optional parameters with `?` modifier
+- Default values using `withDefaults` for props
 
-**Return Values:** Explicit return types in API functions (e.g., `Promise<Project>`)
-
-Example from `src/lib/api.ts`:
-```typescript
-create: (data: CreateProjectRequest): Promise<Project> =>
-  invoke("create_project", { ... }),
-```
+**Return Values:**
+- Explicit return types in API functions
+- Vue components use `computed` for derived values
 
 ## Module Design
 
 **Exports:**
-- Named exports for stores and API modules
-- Default exports for Vue components
+- Named exports for types and API objects (e.g., `export interface Project`, `export const projectApi`)
+- Vue components use default export via `<script setup>`
 
-**Barrel Files:** Not detected (direct imports used)
+**Barrel Files:**
+- Not used - imports use relative paths
+- Example: `import { useProjectStore } from "../../../stores/projectStore"`
 
-## Vue Component Patterns
+## Vue 3 Specific Conventions
 
 **Script Setup:**
 - Use `<script setup lang="ts">` for all Vue components
-- Use `withDefaults` for prop defaults
-- Use `defineEmits` for event definitions
+- Props defined with `interface Props` + `withDefaults(defineProps<Props>(), {...})`
+- Emits defined with `defineEmits<{...}>()`
 
-Example from `src/components/ui/Button.vue`:
-```vue
-<script setup lang="ts">
-interface Props {
-  variant?: "primary" | "secondary" | "danger" | "ghost" | "gradient" | "outline";
-  size?: "sm" | "md" | "lg";
-  disabled?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  variant: "primary",
-  size: "md",
-  disabled: false,
-});
-
-const emit = defineEmits<{
-  (e: "click", event: MouseEvent): void;
-}>();
-</script>
-```
-
-## State Management
-
-**Framework:** Pinia
-
-**Pattern:** Composition API style stores with `defineStore`
-
-Example from `src/stores/uiStore.ts`:
-```typescript
-export const useUiStore = defineStore("ui", () => {
-  const currentView = ref<ViewMode>("dashboard");
-  // ...
-  return { currentView, setView, toggleSidebar };
-});
-```
+**Component Structure:**
+- Props interfaces defined at top of script
+- Reactive state with `ref()` and `computed()`
+- Lifecycle hooks: `onMounted`, `onBeforeUnmount`
+- Event handlers as regular functions
 
 ---
 

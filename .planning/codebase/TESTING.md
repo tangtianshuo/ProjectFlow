@@ -5,27 +5,34 @@
 ## Test Framework
 
 **Runner:**
-- Vitest 4.0.18
+- Vitest v4.0.18
 - Config: `vitest.config.ts`
 
 **Assertion Library:**
 - Vitest built-in `expect`
+- Vue Test Utils for component testing
+
+**Test Dependencies:**
+- `@vue/test-utils` v2.4.6 - Vue component testing
+- `@testing-library/vue` v8.1.0 - Vue testing utilities
+- `@vitest/coverage-v8` v4.0.18 - V8 coverage provider
+- `jsdom` v24.1.3 - DOM environment for tests
 
 **Run Commands:**
 ```bash
-npm test              # Run all tests (vitest run)
-npm run test:watch    # Watch mode (vitest)
-npm run test:coverage # Coverage (vitest run --coverage)
+npm run test              # Run all tests once
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage
 ```
 
 ## Test File Organization
 
 **Location:**
-- Co-located with source files
-- Pattern: `{filename}.test.ts` or `{filename}.spec.ts`
+- Co-located with source files (same directory)
+- Tests placed alongside components and stores
 
 **Naming:**
-- Tests use `.test.ts` suffix
+- `{ComponentName}.test.ts` pattern
 - Examples: `Button.test.ts`, `Input.test.ts`, `uiStore.test.ts`
 
 **Structure:**
@@ -34,20 +41,17 @@ src/
 ├── components/
 │   └── ui/
 │       ├── Button.vue
-│       └── Button.test.ts
-└── stores/
-    ├── uiStore.ts
-    └── uiStore.test.ts
+│       ├── Button.test.ts    # Component tests
+│       ├── Input.vue
+│       └── Input.test.ts
+├── stores/
+│   ├── uiStore.ts
+│   └── uiStore.test.ts       # Store tests
 ```
 
 ## Test Structure
 
-**Suite Organization:**
-- Uses `describe` blocks for test suites
-- Uses `it` or `test` for individual test cases
-- Uses `expect` for assertions
-
-Example from `src/components/ui/Button.test.ts`:
+**Component Tests (Vue Test Utils):**
 ```typescript
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -62,11 +66,7 @@ describe('Button', () => {
 })
 ```
 
-**Patterns:**
-- `beforeEach` for setup (used in store tests)
-- Direct mounting with `@vue/test-utils`
-
-Example from `src/stores/uiStore.test.ts`:
+**Store Tests (Pinia):**
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
@@ -84,48 +84,83 @@ describe('useUiStore', () => {
 })
 ```
 
+**Patterns:**
+- `describe()` blocks group related tests
+- `it()` or `test()` for individual test cases
+- `beforeEach()` for setup/reset
+- Assertions use `expect().toBe()`, `.toBeTruthy()`, `.toEqual()`, etc.
+
 ## Mocking
 
-**Framework:** Vitest (built-in) + @vue/test-utils
+**Framework:** Built-in Vitest + Vue Test Utils
 
 **Patterns:**
-- Vue Test Utils `mount` for component rendering
-- Pinia `setActivePinia(createPinia())` for store testing
+- No explicit mocking framework (e.g., no vi.fn() or jest.mock)
+- Components mounted with `mount()` from Vue Test Utils
+- Props passed via `mount(Component, { props: {...} })`
+- Slots tested via `mount(Component, { slots: {...} })`
+
+**Mocking Example from codebase:**
+```typescript
+// Passing props to component
+const wrapper = mount(Input, {
+  props: { placeholder: 'Enter text' }
+})
+
+// Testing emitted events
+const wrapper = mount(Input)
+const input = wrapper.find('input')
+await input.setValue('hello')
+expect(wrapper.emitted('update:modelValue')).toBeTruthy()
+expect(wrapper.emitted('update:modelValue')![0]).toEqual(['hello'])
+```
+
+**Pinia Store Mocking:**
+```typescript
+import { setActivePinia, createPinia } from 'pinia'
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
+```
 
 **What to Mock:**
-- Pinia stores (use `setActivePinia`)
-- External APIs (Tauri invoke calls not mocked in current tests)
+- External API calls are NOT mocked in current tests
+- Tests are unit tests focusing on component behavior
+- Store state is reset via `beforeEach` with fresh Pinia instance
 
 **What NOT to Mock:**
-- Vue components being tested
-- Internal store logic (test the real store)
+- No HTTP mocking (tests don't cover backend integration)
+- No Tauri invoke mocking
 
 ## Fixtures and Factories
 
 **Test Data:**
-- Inline test data in test files
-- No separate fixture files detected
+- Inline data in test files
+- No dedicated fixture files
 
-Example from `src/stores/uiStore.test.ts`:
+**Example Pattern:**
 ```typescript
-uiStore.selectProject('project-123')
-expect(uiStore.selectedProjectId).toBe('project-123')
+// Props as inline data
+const wrapper = mount(Button, {
+  props: { variant: 'gradient', size: 'md' }
+})
 ```
 
 **Location:**
-- Inline with test cases
-- No dedicated fixtures directory
+- No separate fixtures directory
+- Tests are self-contained
 
 ## Coverage
 
-**Requirements:** None enforced (no coverage threshold)
+**Requirements:** None enforced
 
 **View Coverage:**
 ```bash
 npm run test:coverage
 ```
 
-**Coverage Configuration** (from `vitest.config.ts`):
+**Configuration (vitest.config.ts):**
 ```typescript
 coverage: {
   provider: "v8",
@@ -141,58 +176,61 @@ coverage: {
     "src/assets/**",
     "src/components/**/index.ts",
   ],
-},
+}
 ```
+
+**Excluded from Coverage:**
+- Type definition files (`.d.ts`)
+- Test files
+- Entry points (main.ts, App.vue)
+- Asset files
 
 ## Test Types
 
 **Unit Tests:**
-- Component tests: Vue component rendering, props, variants
-- Store tests: State management, actions, mutations
+- Component rendering tests
+- Props validation tests
+- Event emission tests
+- Store state/behavior tests
 
-**Integration Tests:** Not detected
+**Integration Tests:**
+- Not detected in current codebase
 
-**E2E Tests:** Not used (no E2E framework detected)
+**E2E Tests:**
+- Not used - this is a Tauri desktop app
 
 ## Common Patterns
 
 **Async Testing:**
-- Not explicitly used (current tests are synchronous)
-- Vitest supports `async/await` for async operations
+- Use `async/await` in test functions
+- Use `await wrapper.vm.$nextTick()` for DOM updates (implicit in Vue Test Utils v2+)
+- Example: `await input.setValue('hello')` handles async input
 
 **Error Testing:**
-- Not explicitly demonstrated in current tests
+- Not extensively tested in current test suite
+- Components don't have dedicated error state tests
 
-## Vitest Configuration
-
-**Config File:** `vitest.config.ts`
-
+**Class/Attribute Testing:**
 ```typescript
-export default defineConfig({
-  plugins: [vue()],
-  test: {
-    environment: "jsdom",
-    globals: true,
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
-    include: ["src/**/*.{test,spec}.{js,ts}"],
-  },
-  resolve: {
-    alias: {
-      "@": resolve(__dirname, "src"),
-    },
-  },
-})
+// Check CSS classes
+expect(wrapper.find('button').classes()).toContain('bg-gradient-to-r')
+
+// Check attributes
+expect(wrapper.find('input').attributes('placeholder')).toBe('Enter text')
+expect(wrapper.find('input').attributes('disabled')).toBe('')
 ```
 
-**Key Settings:**
-- Environment: `jsdom` for DOM testing
-- Globals: Enabled (no import needed for `describe`, `it`, `expect`)
-- Single fork mode for consistent test isolation
+**State Testing:**
+```typescript
+// Reactive state
+const uiStore = useUiStore()
+uiStore.setView('projects')
+expect(uiStore.currentView).toBe('projects')
+
+// Toggle state
+uiStore.toggleSidebar()
+expect(uiStore.sidebarCollapsed).toBe(true)
+```
 
 ---
 

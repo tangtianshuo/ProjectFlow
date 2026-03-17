@@ -1,119 +1,197 @@
-# Codebase Structure
+# 代码库结构
 
-**Analysis Date:** 2026-03-17
+**分析日期:** 2026-03-17
 
-## Directory Layout
+## 目录布局
 
 ```
 project-root/
-├── src/                    # Vue 3 frontend source
-├── src-tauri/              # Rust backend source
-├── public/                 # Static assets
-├── docs/                   # Documentation
-├── coverage/               # Test coverage reports
-├── dist/                   # Build output
-├── package.json            # Frontend dependencies
-├── vite.config.ts          # Vite configuration
-├── tsconfig.json           # TypeScript configuration
-├── tailwind.config.js      # Tailwind CSS config
-├── vitest.config.ts        # Test configuration
-└── .github/                # GitHub workflows
+├── src/                        # 前端源码 (Vue 3 + TypeScript)
+│   ├── main.ts                 # 前端入口
+│   ├── App.vue                 # 根组件
+│   ├── style.css               # 全局样式
+│   ├── vite-env.d.ts           # Vite 类型声明
+│   ├── assets/                 # 静态资源
+│   ├── lib/                    # 库和工具
+│   │   └── api.ts              # API 抽象层 (Tauri invoke 封装)
+│   ├── stores/                 # Pinia 状态管理
+│   │   ├── projectStore.ts     # 项目和任务状态
+│   │   ├── documentStore.ts    # 文档状态
+│   │   └── uiStore.ts          # UI 状态 (当前视图、侧边栏)
+│   └── components/             # Vue 组件
+│       ├── ui/                 # 通用 UI 组件
+│       │   ├── Button.vue       # 按钮组件
+│       │   ├── Input.vue        # 输入框组件
+│       │   ├── Modal.vue        # 模态框组件
+│       │   ├── Select.vue       # 选择器组件
+│       │   ├── Icon.vue         # 图标组件
+│       │   ├── Button.test.ts   # 按钮测试
+│       │   └── Input.test.ts    # 输入框测试
+│       ├── features/            # 特性模块组件
+│       │   ├── dashboard/       # 仪表盘
+│       │   │   └── Dashboard.vue
+│       │   ├── projects/        # 项目管理
+│       │   │   └── ProjectList.vue
+│       │   ├── tasks/           # 任务管理
+│       │   │   ├── TaskBoard.vue
+│       │   │   └── GanttChart.vue
+│       │   ├── documents/       # 文档中心
+│       │   │   └── DocumentCenter.vue
+│       │   └── recycleBin/      # 回收站
+│       │       └── RecycleBin.vue
+│       └── layout/              # 布局组件
+│           └── Sidebar.vue      # 侧边栏导航
+├── src-tauri/                  # 后端源码 (Rust + Tauri)
+│   ├── src/
+│   │   ├── main.rs             # Rust 入口 (移动端)
+│   │   ├── lib.rs              # Rust 主入口
+│   │   ├── commands/           # Tauri 命令处理
+│   │   │   └── mod.rs          # 所有命令定义
+│   │   ├── db/                 # 数据库层
+│   │   │   └── mod.rs          # SQLite 操作
+│   │   └── models/             # 数据模型
+│   │       └── mod.rs          # Rust struct 定义
+│   ├── Cargo.toml              # Rust 依赖
+│   ├── tauri.conf.json         # Tauri 配置
+│   ├── capabilities/           # Tauri 权限配置
+│   └── icons/                  # 应用图标
+├── .github/workflows/           # CI/CD 配置
+├── package.json                # Node 依赖
+├── tsconfig.json               # TypeScript 配置
+├── vite.config.ts              # Vite 配置
+└── index.html                  # HTML 入口
 ```
 
-## Directory Purposes
+## 目录用途
 
-**src/ (Frontend):**
-- Purpose: Vue 3 application source code
-- Contains: Components, stores, API client, styles
-- Key files: `main.ts`, `App.vue`, `style.css`
+**src/ - 前端源码**
+- 所有 Vue 组件、TypeScript 代码
+- 使用 Vite 构建
 
-**src-tauri/src/ (Backend):**
-- Purpose: Rust Tauri application
-- Contains: Commands, database, models
-- Key files: `main.rs`, `lib.rs`, `commands/mod.rs`, `db/mod.rs`, `models/mod.rs`
+**src/lib/ - 库和工具**
+- 包含 `api.ts`: Tauri invoke 封装
+- 类型定义 (TypeScript 接口)
+- API 函数导出
 
-**src/components/:**
-- Purpose: Vue components organized by type
-- Structure:
-  - `ui/` - Reusable UI components (Button, Input, Modal, Icon, Select)
-  - `layout/` - Layout components (Sidebar)
-  - `features/` - Feature-specific components
+**src/stores/ - Pinia 状态管理**
+- `projectStore.ts`: 项目、任务 CRUD 和状态
+- `documentStore.ts`: 文档状态管理
+- `uiStore.ts`: 当前视图、侧边栏折叠状态
 
-**src/stores/:**
-- Purpose: Pinia state management
-- Files: `projectStore.ts`, `documentStore.ts`, `uiStore.ts`
+**src/components/ui/ - 通用 UI 组件**
+- 可复用的基础组件
+- 遵循统一的设计规范
+- 包含对应的单元测试
 
-**src/lib/:**
-- Purpose: Utility libraries
-- Files: `api.ts` - Tauri API wrapper
+**src/components/features/ - 特性模块**
+- 按功能模块划分的业务组件
+- 每个模块独立的页面级组件
+- 包含: dashboard, projects, tasks, documents, recycleBin
 
-## Key File Locations
+**src/components/layout/ - 布局组件**
+- 应用整体布局结构
+- 包含 Sidebar 导航组件
 
-**Entry Points:**
-- `src/main.ts` - Vue app initialization
-- `src-tauri/src/main.rs` - Rust application entry
-- `src-tauri/src/lib.rs` - Tauri setup and command registration
+**src-tauri/src/ - Rust 后端**
+- 所有 Rust 代码
+- 数据库操作、命令处理、数据模型
 
-**Configuration:**
-- `package.json` - Frontend dependencies and scripts
-- `vite.config.ts` - Vite build config
-- `tsconfig.json` - TypeScript config
-- `tailwind.config.js` - Tailwind CSS
-- `vitest.config.ts` - Test runner config
-- `src-tauri/Cargo.toml` - Rust dependencies
+## 关键文件位置
 
-**Core Logic:**
-- `src-tauri/src/commands/mod.rs` - Tauri command handlers
-- `src-tauri/src/db/mod.rs` - Database operations
-- `src-tauri/src/models/mod.rs` - Data models
-- `src/lib/api.ts` - Frontend API calls
+**入口点:**
+- `src/main.ts` - 前端 Vue 应用入口
+- `src-tauri/src/lib.rs` - Rust Tauri 应用入口
+- `index.html` - HTML 入口
 
-## Naming Conventions
+**配置:**
+- `package.json` - Node 依赖和脚本
+- `src-tauri/Cargo.toml` - Rust 依赖
+- `src-tauri/tauri.conf.json` - Tauri 配置
+- `tsconfig.json` - TypeScript 配置
+- `vite.config.ts` - Vite 构建配置
 
-**Files:**
-- Vue components: PascalCase (e.g., `GanttChart.vue`, `TaskBoard.vue`)
-- TypeScript modules: camelCase (e.g., `api.ts`, `documentStore.ts`)
-- Rust modules: snake_case (e.g., `mod.rs`, `commands/mod.rs`)
+**API 层:**
+- `src/lib/api.ts` - 前端 API 封装
 
-**Directories:**
-- Components: lowercase with subdirectories for organization
-- Stores: camelCase (e.g., `projectStore.ts`)
-- Rust modules: snake_case
+**状态管理:**
+- `src/stores/projectStore.ts`
+- `src/stores/uiStore.ts`
+- `src/stores/documentStore.ts`
 
-## Where to Add New Code
+**数据库:**
+- `src-tauri/src/db/mod.rs` - SQLite 操作
+- `src-tauri/src/models/mod.rs` - 数据模型
 
-**New Feature:**
-- Frontend: `src/components/features/[feature-name]/`
-- Backend: Add commands to `src-tauri/src/commands/mod.rs`
+**命令处理:**
+- `src-tauri/src/commands/mod.rs` - 所有 Tauri 命令
 
-**New Component/Module:**
-- Implementation: `src/components/` subdirectory
-- Tests: Co-located `.test.ts` files
+## 命名约定
 
-**New Store:**
-- Location: `src/stores/[name]Store.ts`
+**文件:**
+- Vue 组件: PascalCase (如 `ProjectList.vue`, `TaskBoard.vue`)
+- TypeScript 文件: camelCase (如 `api.ts`, `projectStore.ts`)
+- Rust 文件: snake_case (如 `mod.rs`, `lib.rs`)
 
-**New Tauri Command:**
-- Handler: `src-tauri/src/commands/mod.rs`
-- Database method: `src-tauri/src/db/mod.rs`
-- Model (if needed): `src-tauri/src/models/mod.rs`
+**目录:**
+- 组件目录: kebab-case (如 `project-list/`, `task-board/`)
+- 模块目录: camelCase (如 `stores/`, `lib/`)
 
-## Special Directories
+**TypeScript/JS:**
+- 函数: camelCase (如 `createProject`, `fetchProjects`)
+- 组件导入: PascalCase (如 `import Button from '...'`)
+- 常量: UPPER_SNAKE_CASE (如 `VIEW_MODES`)
 
-**src-tauri/target/:**
-- Purpose: Rust build output (generated)
-- Committed: No (in .gitignore)
+**Rust:**
+- 函数: snake_case (如 `create_project`)
+- Struct: PascalCase (如 `struct Project`)
+- 模块: snake_case (如 `mod commands`)
 
-**coverage/:**
-- Purpose: Test coverage reports
-- Generated: Yes (by vitest)
-- Committed: No
+## 添加新代码的位置
 
-**dist/:**
-- Purpose: Production build output
-- Generated: Yes (by vite)
-- Committed: No
+**新特性模块:**
+- 组件: `src/components/features/<module-name>/`
+- Store: `src/stores/` (如果需要新状态)
+- API 函数: `src/lib/api.ts`
+- Rust 命令: `src-tauri/src/commands/mod.rs`
+- 数据库操作: `src-tauri/src/db/mod.rs`
+- 数据模型: `src-tauri/src/models/mod.rs`
+
+**新 UI 组件:**
+- 组件文件: `src/components/ui/<ComponentName>.vue`
+- 测试文件: `src/components/ui/<ComponentName>.test.ts`
+
+**新数据库实体:**
+1. 在 `src-tauri/src/models/mod.rs` 添加 struct
+2. 在 `src-tauri/src/db/mod.rs` 添加表初始化和 CRUD 方法
+3. 在 `src-tauri/src/commands/mod.rs` 添加 Tauri 命令
+4. 在 `src/lib/api.ts` 添加 TypeScript 接口和 API 函数
+
+**新 API 端点:**
+1. Rust 命令: `src-tauri/src/commands/mod.rs`
+2. 前端 API: `src/lib/api.ts`
+3. Store 方法: 相应的 store 文件
+
+## 特殊目录
+
+**src/components/ui/ - 可复用 UI 组件库**
+- 目的: 封装通用 UI 元素
+- 包含: Button, Input, Modal, Select, Icon
+- 特性: 类型 Props、响应式设计
+
+**src/components/features/ - 业务功能组件**
+- 目的: 按功能模块组织业务代码
+- 每个子目录代表一个主要功能
+- 包含: 页面级组件、业务逻辑
+
+**src-tauri/src/db/ - 数据库操作**
+- 目的: 隔离所有 SQLite 操作
+- 包含: 表初始化、CRUD 方法
+- 模式: Database struct 封装
+
+**src-tauri/src/commands/ - Tauri 命令**
+- 目的: 定义前端可调用的命令
+- 模式: #[tauri::command] 宏
 
 ---
 
-*Structure analysis: 2026-03-17*
+*结构分析: 2026-03-17*
