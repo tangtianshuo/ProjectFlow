@@ -72,7 +72,7 @@
 
 **Plans:**
 3/3 plans
-- [ ] 03-01-PLAN.md — Backend LLM integration (Rust)
+- [x] 03-01-PLAN.md — Backend LLM integration (Rust)
 - [ ] 03-02-PLAN.md — Frontend LLM UI (Vue)
 - [ ] 03-03-PLAN.md — Integration & wiring
 

@@ -5,11 +5,11 @@ milestone_name: LLM 文档助手
 status: in_progress
 last_updated: "2026-03-17T14:50:00.000Z"
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 4
+  percent: 50
 ---
 
 # State: ProjectFlow
@@ -58,4 +58,10 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 ---
 
-*State updated: 2026-03-17 after starting v2.0 milestone*
+*State updated: 2026-03-18 after completing 03-01 plan*
+
+## Decisions Made
+
+- Use reqwest directly for OpenAI API instead of genai crate (better control over streaming)
+- Use keyring (Windows Credential Manager) for secure API key storage
+- Use AES-GCM for additional encryption layer before keyring storage
