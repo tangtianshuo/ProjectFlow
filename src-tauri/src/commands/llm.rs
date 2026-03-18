@@ -3,7 +3,7 @@
 //! Provides commands for API key management and chat functionality.
 
 use crate::db::Database;
-use crate::llm::{self, Message, ModelConfig, OpenAIClient};
+use crate::llm::{self, Message, ModelConfig, LitellmClient};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
@@ -67,8 +67,10 @@ pub fn llm_delete_key(model: String) -> Result<(), String> {
 /// securely in the system keychain.
 #[tauri::command]
 pub fn llm_save_model_config(config: ModelConfigRequest) -> Result<(), String> {
+    log::info!("[llm_save_model_config] Saving config for model: {}", config.model_id);
     // Store API key
     llm::store_api_key(&config.model_id, &config.api_key)?;
+    log::info!("[llm_save_model_config] API key stored successfully for model: {}", config.model_id);
 
     // Store model config
     let model_config = ModelConfig {
@@ -76,6 +78,7 @@ pub fn llm_save_model_config(config: ModelConfigRequest) -> Result<(), String> {
         model_name: config.model_name,
     };
     llm::store_model_config(&config.model_id, &model_config)?;
+    log::info!("[llm_save_model_config] Model config stored for: {}", config.model_id);
 
     Ok(())
 }
@@ -108,10 +111,16 @@ pub async fn llm_chat(
     model: Option<String>,
 ) -> Result<(), String> {
     // Get API key
+    log::info!("[llm_chat] Received model: {:?}", model);
     let model_name = model.unwrap_or_else(|| "gpt-4o".to_string());
+    log::info!("[llm_chat] Using model_name: {}", model_name);
     let api_key = match llm::retrieve_api_key(&model_name) {
-        Ok(Some(key)) => key,
+        Ok(Some(key)) => {
+            log::info!("[llm_chat] API key found for model: {}", model_name);
+            key
+        }
         Ok(None) => {
+            log::warn!("[llm_chat] No API key found for model: {}", model_name);
             let _ = app.emit("llm-error", "No API key found. Please save your API key first.");
             return Err("No API key found".to_string());
         }
@@ -152,7 +161,7 @@ pub async fn llm_chat(
     };
 
     // Create client and stream chat
-    let client = OpenAIClient::new(api_key, Some(model_name), base_url);
+    let client = LitellmClient::new(api_key, model_name, base_url);
 
     match client.stream_chat(all_messages).await {
         Ok(mut stream) => {
