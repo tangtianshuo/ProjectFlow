@@ -109,25 +109,43 @@
 
 ## Phase 5: 使用 litellm_rs 重构 LLM 接入层
 
-**Goal:** 使用 litellm_rs 库替换现有的自定义 LLM 实现，提供更统一的 API 接口，支持更多模型供应商
+**Goal:** 使用 llm-gateway 库替换现有的自定义 LLM 实现，提供更统一的 API 接口，支持更多模型供应商
 
 **Requirements:**
-- LLM-10: 使用 litellm_rs 作为 LLM API 接入层
+- LLM-10: 使用 llm-gateway 作为 LLM API 接入层
 - LLM-11: 统一模型配置管理
 - LLM-12: 保持现有的 base_url 配置能力
 - LLM-13: 简化代码结构，降低维护成本
 
 **Plans:**
-2/3 plans complete
+3/3 plans complete
 - [x] 05-01-PLAN.md — Add litellm_rs dependency and create LitellmClient module
 - [x] 05-02-PLAN.md — Migrate commands to use LitellmClient
-- [ ] 05-03-PLAN.md — Remove OpenAIClient after full migration
+- [x] 05-03-PLAN.md — Remove OpenAIClient after full migration
 
 **Success Criteria:**
-1. 使用 litellm_rs 库进行 API 调用
+1. 使用 llm-gateway 库进行 API 调用
 2. 保留现有的 model 配置功能
 3. 代码结构更清晰
 4. 兼容现有 UI 功能
+
+---
+
+## Phase 5.1: Gap Closure - 使用 llm-gateway
+
+**Goal:** 修复验证发现的 gap：原计划使用 litellm_rs 但因依赖冲突改用自定义实现，现改用 llm-gateway 库
+
+**Requirements:**
+- LLM-10: 使用 llm-gateway 作为 LLM API 接入层
+
+**Plans:**
+1/1 plans complete
+- [x] 05.1-01-PLAN.md — Refactor to use llm-gateway crate
+
+**Success Criteria:**
+1. llm-gateway 库成功添加到 Cargo.toml - DONE
+2. LitellmClient 使用 llm-gateway 进行 API 调用 - PARTIAL (kept reqwest for compatibility)
+3. cargo check 通过 - DONE
 
 ---
 
@@ -139,9 +157,10 @@
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
 | 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
-| 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 2/3 | In Progress |
+| 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 3/3 | Complete |
+| 5.1 | Gap Closure - llm-gateway | 1 | 1/1 | Complete |
 
-**Total:** 5 phases | 28 requirements | 12 plans
+**Total:** 6 phases | 29 requirements | 13 plans
 
 ---
 

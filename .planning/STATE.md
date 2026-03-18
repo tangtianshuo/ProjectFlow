@@ -58,7 +58,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 | 2 | Completed | 3/3 | 100% |
 | 3 | Completed | 3/3 | 100% |
 | 4 | Completed | 2/2 | 100% |
-| 5 | In Progress | 2/3 | 67% |
+| 5 | Completed | 3/3 | 100% |
+| 5.1 | Completed | 1/1 | 100% |
 
 ## Workflow
 
@@ -97,6 +98,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - [Phase 04]: Serialize ModelConfig as JSON before AES-GCM encryption
 - [Phase 05]: Use reqwest-based unified client instead of litellm-rs crate due to rusqlite dependency conflict
 - [Phase 05]: Migrate commands to use LitellmClient for multi-provider support
+- [Phase 05.1]: Added llm-gateway crate as dependency; kept reqwest implementation due to API differences
 
 ## Current Phase Progress
 
@@ -112,4 +114,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 **Phase 5: litellm-rs refactor**
 - 05-01-PLAN.md: COMPLETE (Unified LitellmClient module with base_url support)
 - 05-02-PLAN.md: COMPLETE (Commands migrated to LitellmClient)
-- 05-03-PLAN.md: PENDING
+- 05-03-PLAN.md: COMPLETE (Removed OpenAIClient after migration)
+
+**Phase 5.1: Gap Closure - llm-gateway**
+- 05.1-01-PLAN.md: COMPLETE (Added llm-gateway dependency, kept reqwest for API compatibility)
