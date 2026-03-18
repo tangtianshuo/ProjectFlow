@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: LLM 文档助手
-status: in_progress
-last_updated: "2026-03-17T14:50:00.000Z"
+status: completed
+last_updated: "2026-03-18T02:23:30.000Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 5
-  percent: 62
+  completed_plans: 8
+  percent: 100
 ---
 
 # State: ProjectFlow
@@ -30,7 +30,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 |-------|--------|-------|----------|
 | 1 | Completed | 2/2 | 100% |
 | 2 | Completed | 3/3 | 100% |
-| 3 | Pending | - | - |
+| 3 | Completed | 3/3 | 100% |
 
 ## Workflow
 
@@ -71,4 +71,4 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 **Phase 3: LLM 文档助手**
 - 03-01-PLAN.md: COMPLETE (Rust backend with llm_chat, llm_save_key, etc.)
 - 03-02-PLAN.md: COMPLETE (Vue frontend with llmStore, LlmPanel, ChatMessage, LlmSettings)
-- 03-03-PLAN.md: PENDING (Integration with sidebar navigation)
+- 03-03-PLAN.md: COMPLETE (Integration with sidebar navigation)
