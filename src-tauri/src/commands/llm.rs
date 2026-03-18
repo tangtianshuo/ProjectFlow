@@ -114,6 +114,18 @@ pub async fn llm_chat(
     log::info!("[llm_chat] Received model: {:?}", model);
     let model_name = model.unwrap_or_else(|| "gpt-4o".to_string());
     log::info!("[llm_chat] Using model_name: {}", model_name);
+
+    // DEBUG: Check all available keys in keyring
+    log::info!("[llm_chat] DEBUG: Attempting to retrieve API key for model: '{}'", model_name);
+
+    // Check if key exists using has_api_key first
+    let key_exists = llm::has_api_key(&model_name)?;
+    log::info!("[llm_chat] DEBUG: has_api_key({}) = {}", model_name, key_exists);
+
+    // Also check for common model IDs
+    log::info!("[llm_chat] DEBUG: Checking for 'minimax' key: {}", llm::has_api_key("minimax")?);
+    log::info!("[llm_chat] DEBUG: Checking for 'gpt-4o' key: {}", llm::has_api_key("gpt-4o")?);
+    log::info!("[llm_chat] DEBUG: Checking for 'kimi' key: {}", llm::has_api_key("kimi")?);
     let api_key = match llm::retrieve_api_key(&model_name) {
         Ok(Some(key)) => {
             log::info!("[llm_chat] API key found for model: {}", model_name);
@@ -154,11 +166,26 @@ pub async fn llm_chat(
     }
 
     // Retrieve model config for base_url
+    log::info!("[llm_chat] DEBUG: Retrieving model config for: {}", model_name);
     let base_url = match llm::retrieve_model_config(&model_name) {
-        Ok(Some(config)) => Some(config.base_url),
-        Ok(None) => None,
-        Err(_) => None,
+        Ok(Some(config)) => {
+            log::info!("[llm_chat] DEBUG: Found config for {}: base_url={}, model_name={}",
+                model_name, config.base_url, config.model_name);
+            Some(config.base_url)
+        }
+        Ok(None) => {
+            log::info!("[llm_chat] DEBUG: No config found for {}", model_name);
+            None
+        }
+        Err(e) => {
+            log::warn!("[llm_chat] DEBUG: Error retrieving config for {}: {}", model_name, e);
+            None
+        }
     };
+
+    // Check configs for other models too
+    log::info!("[llm_chat] DEBUG: Checking config for 'minimax': {:?}", llm::retrieve_model_config("minimax"));
+    log::info!("[llm_chat] DEBUG: Checking config for 'gpt-4o': {:?}", llm::retrieve_model_config("gpt-4o"));
 
     // Create client and stream chat
     let client = LitellmClient::new(api_key, model_name, base_url);

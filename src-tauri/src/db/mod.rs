@@ -9,9 +9,13 @@ fn parse_date(date_str: &str) -> Option<chrono::DateTime<Utc>> {
     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(date_str) {
         return Some(dt.with_timezone(&Utc));
     }
-    // 尝试 YYYY-MM-DD 格式
+    // 尝试 YYYY-MM-DD 格式，保持日期不变（使用 UTC 避免时区转换导致日期变化）
     if let Ok(date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
-        return Some(date.and_hms_opt(0, 0, 0)?.and_utc());
+        // 使用 UTC 00:00:00 创建日期时间，避免时区转换导致日期变化
+        return Some(chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            date.and_hms_opt(0, 0, 0)?,
+            chrono::Utc,
+        ));
     }
     None
 }

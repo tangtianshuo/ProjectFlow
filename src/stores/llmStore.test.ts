@@ -8,10 +8,8 @@ vi.mock("@tauri-apps/api/event", () => ({
   UnlistenFn: vi.fn(),
 }));
 
-import { listen } from "@tauri-apps/api/event";
-
 // Mock api.ts
-vi.mock("./api", () => ({
+vi.mock("../lib/api", () => ({
   llmApi: {
     chat: vi.fn(),
     saveKey: vi.fn(),
@@ -23,7 +21,7 @@ vi.mock("./api", () => ({
   },
 }));
 
-import { llmApi, type LlmMessage } from "../lib/api";
+import { type LlmMessage } from "../lib/api";
 
 describe("useLlmStore", () => {
   beforeEach(() => {
