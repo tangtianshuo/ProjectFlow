@@ -10,3 +10,10 @@ Resolved debug sessions. Used by `gsd-debugger` to surface known-pattern hypothe
 - **Root cause:** 卡片组件使用硬编码的深色主题颜色（bg-[#0f0f14], text-zinc-100, border-white/8 等），而不是 CSS 变量（var(--bg-card), var(--text-primary), var(--border-default)）
 - **Fix:** 将所有卡片组件中的硬编码颜色替换为 CSS 变量
 - **Files changed:** Dashboard.vue, ProjectList.vue, DocumentCenter.vue, RecycleBin.vue, TaskBoard.vue
+
+## minimax-save-dialog-not-closing — MiniMax API key 保存后弹窗不关闭且聊天显示未配置
+- **Date:** 2026-03-18
+- **Error patterns:** API key not configured, 弹窗不关闭, minimax, selectedModel, emit close
+- **Root cause:** LlmSettings.vue missing emit('close') to close dialog after save, and llmStore.selectedModel not updated after saving model config
+- **Fix:** Added emit('close') in saveKey() after successful save, and added llmStore.selectedModel = selectedModel.value to update store state
+- **Files changed:** src/components/features/llm/LlmSettings.vue, src/stores/llmStore.ts
