@@ -119,6 +119,20 @@ export interface UpdateMilestoneRequest {
   status?: number;
 }
 
+// LLM Types
+export type MessageRole = "user" | "assistant" | "system";
+
+export interface LlmMessage {
+  role: MessageRole;
+  content: string;
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
 // API functions
 export const projectApi = {
   create: (data: CreateProjectRequest): Promise<Project> =>
@@ -233,4 +247,25 @@ export const milestoneApi = {
     }),
 
   delete: (id: string): Promise<void> => invoke("delete_milestone", { id }),
+};
+
+// LLM API functions
+export const llmApi = {
+  saveKey: (model: string, apiKey: string): Promise<void> =>
+    invoke("llm_save_key", { model, apiKey }),
+
+  getKeyStatus: (model: string): Promise<boolean> =>
+    invoke("llm_get_key_status", { model }),
+
+  deleteKey: (model: string): Promise<void> =>
+    invoke("llm_delete_key", { model }),
+
+  chat: (
+    messages: LlmMessage[],
+    projectId?: string,
+    model?: string
+  ): Promise<void> =>
+    invoke("llm_chat", { messages, projectId, model }),
+
+  getModels: (): Promise<ModelInfo[]> => invoke("llm_get_models"),
 };
