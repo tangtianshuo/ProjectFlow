@@ -18,17 +18,25 @@ pub struct OpenAIClient {
     client: Client,
     api_key: String,
     model: String,
+    base_url: String,
 }
 
 impl OpenAIClient {
     /// Create a new OpenAI client
-    pub fn new(api_key: String, model: Option<String>) -> Self {
+    ///
+    /// # Arguments
+    /// * `api_key` - The API key for authentication
+    /// * `model` - The model name (defaults to "gpt-4o")
+    /// * `base_url` - The base URL for the API (defaults to "https://api.openai.com")
+    pub fn new(api_key: String, model: Option<String>, base_url: Option<String>) -> Self {
         let client = Client::new();
         let model = model.unwrap_or_else(|| "gpt-4o".to_string());
+        let base_url = base_url.unwrap_or_else(|| "https://api.openai.com".to_string());
         Self {
             client,
             api_key,
             model,
+            base_url,
         }
     }
 
@@ -40,7 +48,7 @@ impl OpenAIClient {
         messages: Vec<Message>,
     ) -> Result<impl futures_util::stream::Stream<Item = Result<String, String>> + Send, String> {
         let url = format!(
-            "https://api.openai.com/v1/chat/completions"
+            "{}/v1/chat/completions", self.base_url
         );
 
         let body = serde_json::json!({
@@ -104,7 +112,7 @@ impl OpenAIClient {
     /// Non-streaming chat completion
     pub async fn chat(&self, messages: Vec<Message>) -> Result<String, String> {
         let url = format!(
-            "https://api.openai.com/v1/chat/completions"
+            "{}/v1/chat/completions", self.base_url
         );
 
         let body = serde_json::json!({

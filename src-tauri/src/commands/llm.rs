@@ -95,7 +95,8 @@ pub async fn llm_chat(
     }
 
     // Create client and stream chat
-    let client = OpenAIClient::new(api_key, Some(model_name));
+    // TODO: Retrieve base_url from model config in Task 3
+    let client = OpenAIClient::new(api_key, Some(model_name), None);
 
     match client.stream_chat(all_messages).await {
         Ok(mut stream) => {
