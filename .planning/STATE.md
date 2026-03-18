@@ -54,7 +54,7 @@ progress:
 
 # State: ProjectFlow
 
-**Last Updated:** 2026-03-18 (after completing 05-02 plan)
+**Last Updated:** 2026-03-18 (after completing 05.1-02 plan)
 
 ## Project Reference
 
@@ -73,7 +73,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 | 3 | Completed | 3/3 | 100% |
 | 4 | Completed | 2/2 | 100% |
 | 5 | Completed | 3/3 | 100% |
-| 5.1 | Completed | 1/1 | 100% |
+| 5.1 | Completed | 2/2 | 100% |
 
 ## Workflow
 
@@ -113,6 +113,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - [Phase 05]: Use reqwest-based unified client instead of litellm-rs crate due to rusqlite dependency conflict
 - [Phase 05]: Migrate commands to use LitellmClient for multi-provider support
 - [Phase 05.1]: Added llm-gateway crate as dependency; kept reqwest implementation due to API differences
+- [Phase 05.1]: Use llm-gateway for Kimi/DeepSeek; keep reqwest for OpenAI/Anthropic
 
 ## Current Phase Progress
 
@@ -132,3 +133,4 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 **Phase 5.1: Gap Closure - llm-gateway**
 - 05.1-01-PLAN.md: COMPLETE (Added llm-gateway dependency, kept reqwest for API compatibility)
+- 05.1-02-PLAN.md: COMPLETE (Refactored LitellmClient to use llm-gateway for Chinese providers)

@@ -139,12 +139,13 @@
 - LLM-10: 使用 llm-gateway 作为 LLM API 接入层
 
 **Plans:**
-1/1 plans complete
-- [x] 05.1-01-PLAN.md — Refactor to use llm-gateway crate
+2/2 plans complete
+- [x] 05.1-01-PLAN.md — Add llm-gateway dependency
+- [x] 05.1-02-PLAN.md — Refactor to use llm-gateway for Chinese providers
 
 **Success Criteria:**
 1. llm-gateway 库成功添加到 Cargo.toml - DONE
-2. LitellmClient 使用 llm-gateway 进行 API 调用 - PARTIAL (kept reqwest for compatibility)
+2. LitellmClient 使用 llm-gateway 进行 API 调用 - DONE (Chinese providers)
 3. cargo check 通过 - DONE
 
 ---
