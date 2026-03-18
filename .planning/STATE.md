@@ -106,6 +106,10 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 
 - 2026-03-17: **增加用户体系 与我讨论该功能** (area: auth)
 
+### Roadmap Evolution
+
+- 2026-03-18: Phase 6 added: Anthropic SDK LLM 客户端
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |

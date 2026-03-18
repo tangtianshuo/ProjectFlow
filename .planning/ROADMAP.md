@@ -163,6 +163,16 @@
 
 **Total:** 6 phases | 29 requirements | 13 plans
 
+### Phase 6: Anthropic SDK LLM 客户端
+
+**Goal:** 使用 Anthropic SDK 替换当前的 llm-gateway 实现
+**Requirements**: TBD
+**Depends on:** Phase 5.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)
+
 ---
 
 *Roadmap created: 2026-03-17*
