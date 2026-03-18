@@ -12,6 +12,7 @@ const menuItems: { id: ViewMode; label: string; icon: string }[] = [
   { id: "projects", label: "项目管理", icon: "folder-kanban" },
   { id: "tasks", label: "任务管理", icon: "check-square" },
   { id: "documents", label: "文档中心", icon: "file-text" },
+  { id: "llm", label: "AI 助手", icon: "bot" },
   { id: "recycleBin", label: "回收站", icon: "trash-2" },
 ];
 

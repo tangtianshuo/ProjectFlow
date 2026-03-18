@@ -8,6 +8,7 @@ import ProjectList from "./components/features/projects/ProjectList.vue";
 import TaskBoard from "./components/features/tasks/TaskBoard.vue";
 import DocumentCenter from "./components/features/documents/DocumentCenter.vue";
 import RecycleBin from "./components/features/recycleBin/RecycleBin.vue";
+import LlmPanel from "./components/features/llm/LlmPanel.vue";
 
 const projectStore = useProjectStore();
 const uiStore = useUiStore();
@@ -38,6 +39,7 @@ onMounted(() => {
           <ProjectList v-else-if="uiStore.currentView === 'projects'" />
           <TaskBoard v-else-if="uiStore.currentView === 'tasks'" />
           <DocumentCenter v-else-if="uiStore.currentView === 'documents'" />
+          <LlmPanel v-else-if="uiStore.currentView === 'llm'" />
           <RecycleBin v-else-if="uiStore.currentView === 'recycleBin'" />
           <div v-else-if="uiStore.currentView === 'settings'" class="p-4 lg:p-6">
             <h1 class="text-xl lg:text-2xl font-bold text-zinc-100">设置</h1>

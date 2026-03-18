@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
-export type ViewMode = "dashboard" | "projects" | "tasks" | "documents" | "settings" | "recycleBin";
+export type ViewMode = "dashboard" | "projects" | "tasks" | "documents" | "settings" | "recycleBin" | "llm";
 export type TaskViewMode = "kanban" | "gantt";
 export type Theme = "dark" | "light";
 
