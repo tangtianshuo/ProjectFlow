@@ -107,6 +107,29 @@
 
 ---
 
+## Phase 5: 使用 litellm_rs 重构 LLM 接入层
+
+**Goal:** 使用 litellm_rs 库替换现有的自定义 LLM 实现，提供更统一的 API 接口，支持更多模型供应商
+
+**Requirements:**
+- LLM-10: 使用 litellm_rs 作为 LLM API 接入层
+- LLM-11: 统一模型配置管理
+- LLM-12: 保持现有的 base_url 配置能力
+- LLM-13: 简化代码结构，降低维护成本
+
+**Plans:**
+2/2 plans
+- [ ] 05-01-PLAN.md — Add litellm_rs dependency and create LitellmClient module
+- [ ] 05-02-PLAN.md — Migrate commands to use LitellmClient
+
+**Success Criteria:**
+1. 使用 litellm_rs 库进行 API 调用
+2. 保留现有的 model 配置功能
+3. 代码结构更清晰
+4. 兼容现有 UI 功能
+
+---
+
 ## Summary
 
 | Phase | Name | Requirements | Plans | Status |
@@ -115,8 +138,9 @@
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
 | 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
+| 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 2/2 | Planned |
 
-**Total:** 4 phases | 24 requirements | 10 plans
+**Total:** 5 phases | 28 requirements | 12 plans
 
 ---
 
