@@ -71,7 +71,7 @@
 - LLM-06: Conversation history
 
 **Plans:**
-3/3 plans
+3/3 plans complete
 - [x] 03-01-PLAN.md — Backend LLM integration (Rust)
 - [x] 03-02-PLAN.md — Frontend LLM UI (Vue)
 - [ ] 03-03-PLAN.md — Integration & wiring
@@ -91,7 +91,7 @@
 |-------|------|--------------|-------|------------------|
 | 1 | 暗色系 UI 优化 | Complete | 2/2 | Complete |
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
-| 3 | LLM 文档助手 | 6 | 3/3 | In Progress |
+| 3 | LLM 文档助手 | Complete    | 2026-03-18 | In Progress |
 
 **Total:** 3 phases | 21 requirements | 8 plans
 

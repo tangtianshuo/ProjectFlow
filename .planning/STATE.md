@@ -1,5 +1,18 @@
 ---
 gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: completed
+last_updated: "2026-03-18T02:26:57.854Z"
+progress:
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
+---
+
+---
+gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: LLM 文档助手
 status: completed
