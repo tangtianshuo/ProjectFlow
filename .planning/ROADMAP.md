@@ -158,7 +158,7 @@
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
 | 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
 | 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 3/3 | Complete |
-| 5.1 | Gap Closure - llm-gateway | 1 | 1/1 | Complete |
+| 5.1 | 1/1 | Complete    | 2026-03-18 | Complete |
 
 **Total:** 6 phases | 29 requirements | 13 plans
 
