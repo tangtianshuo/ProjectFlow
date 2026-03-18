@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { llmApi, type LlmMessage, type ModelConfig } from "../lib/api";
 
@@ -24,7 +24,14 @@ export const useLlmStore = defineStore("llm", () => {
   const selectedModel = ref("gpt-4o");
   const error = ref<string | null>(null);
   const modelConfigs = ref<Record<string, ModelConfig>>({});
-  const selectedModelId = ref("gpt-4o");
+  // Load saved model from localStorage
+  const savedModelId = localStorage.getItem("selectedModelId");
+  const selectedModelId = ref(savedModelId || "gpt-4o");
+
+  // Watch for model changes and save to localStorage
+  watch(selectedModelId, (newValue) => {
+    localStorage.setItem("selectedModelId", newValue);
+  });
 
   // Tauri event listeners
   let unlistenToken: UnlistenFn | null = null;
