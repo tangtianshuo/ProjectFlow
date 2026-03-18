@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import Modal from "../../ui/Modal.vue";
 import Input from "../../ui/Input.vue";
 import Button from "../../ui/Button.vue";
-import { useLlmStore } from "../../../stores/llmStore";
-import { llmApi } from "../../../lib/api";
+import { useLlmStore, DEFAULT_MODEL_CONFIGS } from "../../../stores/llmStore";
+import { llmApi, type ModelConfig } from "../../../lib/api";
 
 interface Props {
   open: boolean;
@@ -20,24 +20,44 @@ const llmStore = useLlmStore();
 
 const selectedModel = ref("gpt-4o");
 const apiKey = ref("");
+const baseUrl = ref("");
+const modelName = ref("");
 const loading = ref(false);
 const status = ref<"idle" | "configured" | "not_configured">("idle");
 
-const models = [
-  { id: "gpt-4o", name: "GPT-4o" },
-  { id: "gpt-4o-mini", name: "GPT-4o Mini" },
-  { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-  { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
-];
+const models = computed(() => {
+  return Object.entries(DEFAULT_MODEL_CONFIGS).map(([id, config]) => ({
+    id,
+    name: `${config.name} (${config.default_model})`,
+  }));
+});
 
 onMounted(async () => {
-  selectedModel.value = llmStore.selectedModel;
+  selectedModel.value = llmStore.selectedModelId || llmStore.selectedModel;
   await checkStatus();
+  await loadModelConfig();
 });
 
 watch(selectedModel, async () => {
   await checkStatus();
+  await loadModelConfig();
 });
+
+async function loadModelConfig() {
+  const config = await llmStore.getModelConfig(selectedModel.value);
+  if (config) {
+    baseUrl.value = config.base_url;
+    modelName.value = config.model_name;
+    apiKey.value = ""; // Don't show saved API key
+  } else {
+    // Use defaults
+    const defaults = DEFAULT_MODEL_CONFIGS[selectedModel.value];
+    if (defaults) {
+      baseUrl.value = defaults.base_url;
+      modelName.value = defaults.default_model;
+    }
+  }
+}
 
 async function checkStatus() {
   const hasKey = await llmApi.getKeyStatus(selectedModel.value);
@@ -49,7 +69,16 @@ async function saveKey() {
 
   loading.value = true;
   try {
-    await llmStore.saveApiKey(selectedModel.value, apiKey.value);
+    // Save model config with base_url, model_name, and api_key
+    const config: ModelConfig = {
+      model_id: selectedModel.value,
+      base_url: baseUrl.value,
+      model_name: modelName.value,
+      api_key: apiKey.value,
+    };
+    await llmStore.saveModelConfig(selectedModel.value, config);
+    // Also update the store's selected model ID
+    llmStore.selectedModelId = selectedModel.value;
     apiKey.value = "";
     status.value = "configured";
   } catch (e) {
@@ -92,6 +121,30 @@ function close() {
             {{ model.name }}
           </option>
         </select>
+      </div>
+
+      <!-- Base URL input -->
+      <div>
+        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+          Base URL
+        </label>
+        <Input
+          v-model="baseUrl"
+          type="text"
+          placeholder="https://api.example.com/v1"
+        />
+      </div>
+
+      <!-- Model Name input -->
+      <div>
+        <label class="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+          Model Name
+        </label>
+        <Input
+          v-model="modelName"
+          type="text"
+          placeholder="model-name"
+        />
       </div>
 
       <!-- API Key input -->
