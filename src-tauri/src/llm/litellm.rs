@@ -3,16 +3,9 @@
 //! Provides a unified API for multiple LLM providers (OpenAI, Anthropic, Azure,
 //! Ollama, and OpenAI-compatible APIs like Kimi/DeepSeek/MiniMax).
 //!
-//! This module wraps the OpenAI-compatible API pattern which is supported by
-//! most modern LLM providers including:
-//! - OpenAI (api.openai.com)
-//! - Anthropic (api.anthropic.com) - via OpenAI compatibility API
-//! - Azure OpenAI
-//! - Ollama (localhost)
-//! - Kimi (moonshot.cn)
-//! - DeepSeek (deepseek.com)
-//! - MiniMax (minimax.chat)
-//! - And many other OpenAI-compatible providers
+//! Note: llm-gateway crate is included as a dependency but currently we use
+//! custom reqwest implementation for better control and OpenAI-compatible support.
+//! The llm-gateway crate can be used for Chinese providers in future.
 
 use futures_util::stream::StreamExt;
 use reqwest::Client;
