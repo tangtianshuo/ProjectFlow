@@ -76,11 +76,16 @@ async function saveKey() {
       model_name: modelName.value,
       api_key: apiKey.value,
     };
+    console.log("[LlmSettings] Saving - selectedModel:", selectedModel.value, "config:", config);
     await llmStore.saveModelConfig(selectedModel.value, config);
-    // Also update the store's selected model ID
+    // Also update the store's selected model ID and selected model
     llmStore.selectedModelId = selectedModel.value;
+    llmStore.selectedModel = selectedModel.value;
+    console.log("[LlmSettings] After save - store.selectedModelId:", llmStore.selectedModelId, "store.selectedModel:", llmStore.selectedModel);
     apiKey.value = "";
     status.value = "configured";
+    // Close the dialog after successful save
+    emit("close");
   } catch (e) {
     console.error("Failed to save API key:", e);
   } finally {

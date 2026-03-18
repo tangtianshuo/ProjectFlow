@@ -94,6 +94,7 @@ export const useLlmStore = defineStore("llm", () => {
 
     // Get the model to use (selectedModelId takes precedence, then selectedModel)
     const modelToUse = selectedModelId.value || selectedModel.value;
+    console.log("[llmStore] sendMessage - modelToUse:", modelToUse, "selectedModelId:", selectedModelId.value, "selectedModel:", selectedModel.value);
 
     try {
       await llmApi.chat(
