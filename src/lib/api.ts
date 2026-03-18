@@ -133,6 +133,13 @@ export interface ModelInfo {
   description: string;
 }
 
+export interface ModelConfig {
+  model_id: string;
+  base_url: string;
+  model_name: string;
+  api_key: string;
+}
+
 // API functions
 export const projectApi = {
   create: (data: CreateProjectRequest): Promise<Project> =>
@@ -268,4 +275,10 @@ export const llmApi = {
     invoke("llm_chat", { messages, projectId, model }),
 
   getModels: (): Promise<ModelInfo[]> => invoke("llm_get_models"),
+
+  saveModelConfig: (config: ModelConfig): Promise<void> =>
+    invoke("llm_save_model_config", { config }),
+
+  getModelConfig: (modelId: string): Promise<ModelConfig | null> =>
+    invoke("llm_get_model_config", { modelId }),
 };
