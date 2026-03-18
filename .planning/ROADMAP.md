@@ -118,8 +118,8 @@
 - LLM-13: 简化代码结构，降低维护成本
 
 **Plans:**
-2/2 plans
-- [ ] 05-01-PLAN.md — Add litellm_rs dependency and create LitellmClient module
+1/2 plans complete
+- [x] 05-01-PLAN.md — Add litellm_rs dependency and create LitellmClient module
 - [ ] 05-02-PLAN.md — Migrate commands to use LitellmClient
 
 **Success Criteria:**
@@ -138,7 +138,7 @@
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
 | 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
-| 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 2/2 | Planned |
+| 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 1/2 | In Progress |
 
 **Total:** 5 phases | 28 requirements | 12 plans
 

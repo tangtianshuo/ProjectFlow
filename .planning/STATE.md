@@ -40,7 +40,7 @@ progress:
 
 # State: ProjectFlow
 
-**Last Updated:** 2026-03-18
+**Last Updated:** 2026-03-18 (after completing 05-01 plan)
 
 ## Project Reference
 
@@ -58,6 +58,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 | 2 | Completed | 3/3 | 100% |
 | 3 | Completed | 3/3 | 100% |
 | 4 | Completed | 2/2 | 100% |
+| 5 | In Progress | 1/3 | 33% |
 
 ## Workflow
 
@@ -94,6 +95,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - Use AES-GCM for additional encryption layer before keyring storage
 - [Phase 04]: Use keyring service with _config suffix for model configuration storage
 - [Phase 04]: Serialize ModelConfig as JSON before AES-GCM encryption
+- [Phase 05]: Use reqwest-based unified client instead of litellm-rs crate due to rusqlite dependency conflict
 
 ## Current Phase Progress
 
@@ -105,3 +107,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 **Phase 4: 适配国产LLM模型**
 - 04-01-PLAN.md: COMPLETE (Backend: base_url, model config storage)
 - 04-02-PLAN.md: COMPLETE (Frontend: model selection UI and config inputs)
+
+**Phase 5: litellm-rs refactor**
+- 05-01-PLAN.md: COMPLETE (Unified LitellmClient module with base_url support)
+- 05-02-PLAN.md: PENDING
+- 05-03-PLAN.md: PENDING
