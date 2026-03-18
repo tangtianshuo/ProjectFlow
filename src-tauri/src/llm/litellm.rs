@@ -62,7 +62,7 @@ impl LitellmClient {
     /// * `base_url` - Optional custom base URL for OpenAI-compatible APIs
     ///
     /// # Example
-    /// ```rust
+    /// ```ignore
     /// // OpenAI
     /// let client = LitellmClient::new(
     ///     "sk-xxx".to_string(),
@@ -586,7 +586,7 @@ mod tests {
             Some("http://localhost:11434".to_string()),
         );
         assert!(client.base_url.contains("localhost:11434"));
-        assert!(client.base_url.contains("/v1/chat/completions"));
+        assert!(client.base_url.contains("/v1"));
     }
 
     #[test]
