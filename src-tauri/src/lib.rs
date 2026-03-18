@@ -1,5 +1,6 @@
 mod commands;
 mod db;
+mod llm;
 mod models;
 
 use db::Database;
@@ -63,6 +64,11 @@ pub fn run() {
             commands::get_milestones_by_project,
             commands::update_milestone,
             commands::delete_milestone,
+            commands::llm::llm_save_key,
+            commands::llm::llm_get_key_status,
+            commands::llm::llm_delete_key,
+            commands::llm::llm_chat,
+            commands::llm::llm_get_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
