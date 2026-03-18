@@ -3,7 +3,7 @@
 //! Provides commands for API key management and chat functionality.
 
 use crate::db::Database;
-use crate::llm::{self, Message, OpenAIClient};
+use crate::llm::{self, Message, ModelConfig, OpenAIClient};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
@@ -19,6 +19,22 @@ pub struct SaveKeyRequest {
 #[derive(Debug, Serialize)]
 pub struct ChatResponse {
     pub content: String,
+}
+
+/// Request to save model configuration
+#[derive(Debug, Deserialize)]
+pub struct ModelConfigRequest {
+    pub model_id: String,
+    pub base_url: String,
+    pub model_name: String,
+    pub api_key: String,
+}
+
+/// Response for model config
+#[derive(Debug, Serialize)]
+pub struct ModelConfigResponse {
+    pub base_url: String,
+    pub model_name: String,
 }
 
 /// Save API key securely
@@ -43,6 +59,40 @@ pub fn llm_get_key_status(model: String) -> Result<bool, String> {
 #[tauri::command]
 pub fn llm_delete_key(model: String) -> Result<(), String> {
     llm::delete_api_key(&model)
+}
+
+/// Save model configuration including API key
+///
+/// Stores both the model configuration (base_url, model_name) and the API key
+/// securely in the system keychain.
+#[tauri::command]
+pub fn llm_save_model_config(config: ModelConfigRequest) -> Result<(), String> {
+    // Store API key
+    llm::store_api_key(&config.model_id, &config.api_key)?;
+
+    // Store model config
+    let model_config = ModelConfig {
+        base_url: config.base_url,
+        model_name: config.model_name,
+    };
+    llm::store_model_config(&config.model_id, &model_config)?;
+
+    Ok(())
+}
+
+/// Get model configuration
+///
+/// Retrieves the model configuration (base_url, model_name) from the system keychain.
+/// Does not return the API key for security reasons.
+#[tauri::command]
+pub fn llm_get_model_config(model_id: String) -> Result<Option<ModelConfigResponse>, String> {
+    match llm::retrieve_model_config(&model_id)? {
+        Some(config) => Ok(Some(ModelConfigResponse {
+            base_url: config.base_url,
+            model_name: config.model_name,
+        })),
+        None => Ok(None),
+    }
 }
 
 /// Send chat message and receive streaming response
@@ -94,9 +144,15 @@ pub async fn llm_chat(
         }
     }
 
+    // Retrieve model config for base_url
+    let base_url = match llm::retrieve_model_config(&model_name) {
+        Ok(Some(config)) => Some(config.base_url),
+        Ok(None) => None,
+        Err(_) => None,
+    };
+
     // Create client and stream chat
-    // TODO: Retrieve base_url from model config in Task 3
-    let client = OpenAIClient::new(api_key, Some(model_name), None);
+    let client = OpenAIClient::new(api_key, Some(model_name), base_url);
 
     match client.stream_chat(all_messages).await {
         Ok(mut stream) => {
@@ -126,10 +182,11 @@ pub async fn llm_chat(
 
 /// Get available models
 ///
-/// Returns a list of supported LLM models.
+/// Returns a list of supported LLM models including Chinese providers.
 #[tauri::command]
 pub fn llm_get_models() -> Vec<ModelInfo> {
     vec![
+        // OpenAI models
         ModelInfo {
             id: "gpt-4o".to_string(),
             name: "GPT-4o".to_string(),
@@ -149,6 +206,34 @@ pub fn llm_get_models() -> Vec<ModelInfo> {
             id: "gpt-3.5-turbo".to_string(),
             name: "GPT-3.5 Turbo".to_string(),
             description: "Fast and cost-effective".to_string(),
+        },
+        // Kimi (Moonshot AI)
+        ModelInfo {
+            id: "kimi".to_string(),
+            name: "Kimi".to_string(),
+            description: "Moonshot AI - Long context support".to_string(),
+        },
+        ModelInfo {
+            id: "kimi-flash".to_string(),
+            name: "Kimi Flash".to_string(),
+            description: "Moonshot AI - Fast response".to_string(),
+        },
+        // DeepSeek
+        ModelInfo {
+            id: "deepseek-chat".to_string(),
+            name: "DeepSeek Chat".to_string(),
+            description: "DeepSeek - Open source AI assistant".to_string(),
+        },
+        ModelInfo {
+            id: "deepseek-coder".to_string(),
+            name: "DeepSeek Coder".to_string(),
+            description: "DeepSeek - Code specialist".to_string(),
+        },
+        // MiniMax
+        ModelInfo {
+            id: "minimax".to_string(),
+            name: "MiniMax".to_string(),
+            description: "MiniMax - Multi-modal AI".to_string(),
         },
     ]
 }
