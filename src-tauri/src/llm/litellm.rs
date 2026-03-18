@@ -3,11 +3,13 @@
 //! Provides a unified API for multiple LLM providers (OpenAI, Anthropic, Azure,
 //! Ollama, and OpenAI-compatible APIs like Kimi/DeepSeek/MiniMax).
 //!
-//! Note: llm-gateway crate is included as a dependency but currently we use
-//! custom reqwest implementation for better control and OpenAI-compatible support.
-//! The llm-gateway crate can be used for Chinese providers in future.
+//! Uses llm-gateway crate for Chinese providers (Kimi, DeepSeek) and reqwest
+//! for standard providers (OpenAI, Anthropic, Ollama).
 
-use futures_util::stream::StreamExt;
+use futures_util::stream::{BoxStream, StreamExt};
+use llm_gateway::types::ChatRequest;
+use llm_gateway::Client as GatewayClient;
+use llm_gateway::Config;
 use reqwest::Client;
 
 // Re-export Message from openai module to ensure type consistency
@@ -17,15 +19,33 @@ pub use crate::llm::openai::Message;
 ///
 /// This client works with any OpenAI-compatible API endpoint, making it
 /// compatible with a wide range of LLM providers.
+///
+/// Uses llm-gateway for Chinese providers (Kimi, DeepSeek) and reqwest for
+/// standard providers (OpenAI, Anthropic, Ollama).
 pub struct LitellmClient {
-    /// HTTP client for making requests
+    /// HTTP client for making requests (used for standard providers)
     client: Client,
+    /// Gateway client for Chinese providers (Kimi, DeepSeek)
+    gateway_client: Option<GatewayClient>,
     /// API key for authentication
     api_key: String,
     /// Model name to use
     model: String,
     /// Base URL for the API (e.g., "https://api.openai.com", "https://api.moonshot.cn/v1")
     base_url: String,
+    /// Provider identifier to detect Chinese providers
+    provider_id: String,
+}
+
+/// Detect if a model/provider uses Chinese LLM services
+fn is_chinese_provider(model: &str, base_url: &str) -> bool {
+    let model_lower = model.to_lowercase();
+    let url_lower = base_url.to_lowercase();
+
+    // Kimi (moonshot.ai)
+    model_lower.contains("moonshot") || url_lower.contains("moonshot.cn")
+    // DeepSeek
+    || model_lower.contains("deepseek") || url_lower.contains("deepseek.com")
 }
 
 impl LitellmClient {
@@ -65,18 +85,51 @@ impl LitellmClient {
 
         // Ensure base_url has the proper path for chat completions
         let base_url = if base_url.ends_with("/v1") || base_url.contains("/v1/") {
-            base_url
+            base_url.clone()
         } else if base_url.ends_with("/") {
             format!("{}v1", base_url)
         } else {
             format!("{}/v1", base_url)
         };
 
+        // Detect if this is a Chinese provider that should use llm-gateway
+        let provider_id = if base_url.contains("moonshot.cn") {
+            "kimi".to_string()
+        } else if base_url.contains("deepseek.com") {
+            "deepseek".to_string()
+        } else {
+            "".to_string()
+        };
+
+        // Initialize llm-gateway client for Chinese providers
+        let gateway_client = if is_chinese_provider(&model, &base_url) {
+            // Create Config with provider-specific API key and base_url
+            let mut config = Config::default();
+            if provider_id == "kimi" {
+                config.kimi = llm_gateway::ProviderConfig {
+                    base_url: Some(base_url.clone()),
+                    api_key: Some(api_key.clone()),
+                    ..Default::default()
+                };
+            } else if provider_id == "deepseek" {
+                config.deepseek = llm_gateway::ProviderConfig {
+                    base_url: Some(base_url.clone()),
+                    api_key: Some(api_key.clone()),
+                    ..Default::default()
+                };
+            }
+            Some(GatewayClient::with_config(config))
+        } else {
+            None
+        };
+
         Self {
             client,
+            gateway_client,
             api_key,
             model,
             base_url,
+            provider_id,
         }
     }
 
@@ -86,7 +139,35 @@ impl LitellmClient {
     pub async fn stream_chat(
         &self,
         messages: Vec<Message>,
-    ) -> Result<impl futures_util::stream::Stream<Item = Result<String, String>> + Send, String> {
+    ) -> Result<futures_util::stream::BoxStream<'static, Result<String, String>>, String> {
+        // Use llm-gateway for Chinese providers (Kimi, DeepSeek)
+        if let Some(ref gateway_client) = self.gateway_client {
+            // Convert messages to (role, content) tuples for llm-gateway
+            let gateway_messages: Vec<(String, String)> = messages
+                .into_iter()
+                .map(|m| (m.role, m.content))
+                .collect();
+
+            let request = ChatRequest {
+                model: self.model.clone(),
+                messages: gateway_messages,
+            };
+
+            let stream = gateway_client
+                .chat_stream(request)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            // Convert llm-gateway stream to our stream type
+            // The gateway returns BoxStream<Result<String, LlmProxyError>>
+            let stream: BoxStream<'static, Result<String, String>> = stream
+                .map(|result| result.map_err(|e| e.to_string()))
+                .boxed();
+
+            return Ok(stream);
+        }
+
+        // Fall back to reqwest for standard providers (OpenAI, Anthropic, Ollama)
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = serde_json::json!({
@@ -145,6 +226,7 @@ impl LitellmClient {
             }
         });
 
+        let stream: BoxStream<'static, Result<String, String>> = stream.boxed();
         Ok(stream)
     }
 
@@ -152,6 +234,28 @@ impl LitellmClient {
     ///
     /// Returns the complete response as a string
     pub async fn chat(&self, messages: Vec<Message>) -> Result<String, String> {
+        // Use llm-gateway for Chinese providers (Kimi, DeepSeek)
+        if let Some(ref gateway_client) = self.gateway_client {
+            // Convert messages to (role, content) tuples for llm-gateway
+            let gateway_messages: Vec<(String, String)> = messages
+                .into_iter()
+                .map(|m| (m.role, m.content))
+                .collect();
+
+            let request = ChatRequest {
+                model: self.model.clone(),
+                messages: gateway_messages,
+            };
+
+            let response = gateway_client
+                .chat(request)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            return Ok(response.text);
+        }
+
+        // Fall back to reqwest for standard providers (OpenAI, Anthropic, Ollama)
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = serde_json::json!({
