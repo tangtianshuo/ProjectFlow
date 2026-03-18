@@ -165,30 +165,26 @@ pub async fn llm_chat(
         }
     }
 
-    // Retrieve model config for base_url
+    // Retrieve model config for base_url and actual model name
     log::info!("[llm_chat] DEBUG: Retrieving model config for: {}", model_name);
-    let base_url = match llm::retrieve_model_config(&model_name) {
+    let (base_url, actual_model_name) = match llm::retrieve_model_config(&model_name) {
         Ok(Some(config)) => {
             log::info!("[llm_chat] DEBUG: Found config for {}: base_url={}, model_name={}",
                 model_name, config.base_url, config.model_name);
-            Some(config.base_url)
+            (Some(config.base_url), config.model_name)
         }
         Ok(None) => {
             log::info!("[llm_chat] DEBUG: No config found for {}", model_name);
-            None
+            (None, model_name.clone())
         }
         Err(e) => {
             log::warn!("[llm_chat] DEBUG: Error retrieving config for {}: {}", model_name, e);
-            None
+            (None, model_name.clone())
         }
     };
 
-    // Check configs for other models too
-    log::info!("[llm_chat] DEBUG: Checking config for 'minimax': {:?}", llm::retrieve_model_config("minimax"));
-    log::info!("[llm_chat] DEBUG: Checking config for 'gpt-4o': {:?}", llm::retrieve_model_config("gpt-4o"));
-
     // Create client and stream chat
-    let client = LitellmClient::new(api_key, model_name, base_url);
+    let client = LitellmClient::new(api_key, actual_model_name, base_url);
 
     match client.stream_chat(all_messages).await {
         Ok(mut stream) => {
