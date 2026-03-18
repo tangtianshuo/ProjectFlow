@@ -95,9 +95,9 @@
 - LLM-09: Model selection UI
 
 **Plans:**
-1/2 plans executed
+2/2 plans complete
 - [x] 04-01-PLAN.md — Backend: Extend OpenAIClient with base_url, storage for model config
-- [ ] 04-02-PLAN.md — Frontend: Model selection UI and config inputs
+- [x] 04-02-PLAN.md — Frontend: Model selection UI and config inputs
 
 **Success Criteria:**
 1. 用户可以选择 Kimi、DeepSeek、MiniMax 模型
@@ -114,7 +114,7 @@
 | 1 | 暗色系 UI 优化 | Complete | 2/2 | Complete |
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
-| 4 | 1/2 | In Progress|  | Planned |
+| 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
 
 **Total:** 4 phases | 24 requirements | 10 plans
 

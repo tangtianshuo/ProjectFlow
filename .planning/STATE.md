@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-last_updated: "2026-03-18T02:26:57.854Z"
+last_updated: "2026-03-18T07:03:44.940Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
 ---
 
 ---
@@ -27,7 +27,7 @@ progress:
 
 # State: ProjectFlow
 
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-03-18
 
 ## Project Reference
 
@@ -44,6 +44,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 | 1 | Completed | 2/2 | 100% |
 | 2 | Completed | 3/3 | 100% |
 | 3 | Completed | 3/3 | 100% |
+| 4 | Completed | 2/2 | 100% |
 
 ## Workflow
 
@@ -78,6 +79,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - Use reqwest directly for OpenAI API instead of genai crate (better control over streaming)
 - Use keyring (Windows Credential Manager) for secure API key storage
 - Use AES-GCM for additional encryption layer before keyring storage
+- [Phase 04]: Use keyring service with _config suffix for model configuration storage
+- [Phase 04]: Serialize ModelConfig as JSON before AES-GCM encryption
 
 ## Current Phase Progress
 
@@ -85,3 +88,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - 03-01-PLAN.md: COMPLETE (Rust backend with llm_chat, llm_save_key, etc.)
 - 03-02-PLAN.md: COMPLETE (Vue frontend with llmStore, LlmPanel, ChatMessage, LlmSettings)
 - 03-03-PLAN.md: COMPLETE (Integration with sidebar navigation)
+
+**Phase 4: 适配国产LLM模型**
+- 04-01-PLAN.md: COMPLETE (Backend: base_url, model config storage)
+- 04-02-PLAN.md: COMPLETE (Frontend: model selection UI and config inputs)
