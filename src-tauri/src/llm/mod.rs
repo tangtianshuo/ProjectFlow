@@ -9,6 +9,6 @@ pub mod storage;
 pub use openai::{Message, OpenAIClient};
 pub use prompts::build_system_prompt;
 pub use storage::{
-    decrypt_api_key, delete_api_key, encrypt_api_key, has_api_key, retrieve_api_key,
-    store_api_key,
+    decrypt_api_key, delete_api_key, delete_model_config, encrypt_api_key, has_api_key,
+    retrieve_api_key, retrieve_model_config, store_api_key, store_model_config, ModelConfig,
 };

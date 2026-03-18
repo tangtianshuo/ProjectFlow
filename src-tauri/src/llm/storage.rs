@@ -9,10 +9,25 @@ use aes_gcm::{
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use keyring::Entry;
+use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
 /// Service name for keyring entries
 const SERVICE_NAME: &str = "projectflow";
+
+/// Suffix for model config keyring entries
+const CONFIG_SUFFIX: &str = "_config";
+
+/// Model configuration for LLM providers
+///
+/// Stores the base_url and model_name for a given model ID.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelConfig {
+    /// The base URL for the API endpoint
+    pub base_url: String,
+    /// The model name to use
+    pub model_name: String,
+}
 
 /// Derive a device-specific encryption key
 ///
@@ -153,6 +168,55 @@ pub fn has_api_key(model: &str) -> Result<bool, String> {
     match entry.get_password() {
         Ok(_) => Ok(true),
         Err(keyring::Error::NoEntry) => Ok(false),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// Store model configuration securely using keyring
+///
+/// Encrypts and stores the model config (base_url, model_name) in the system keychain.
+pub fn store_model_config(model_id: &str, config: &ModelConfig) -> Result<(), String> {
+    // Serialize config to JSON
+    let json = serde_json::to_string(config).map_err(|e| e.to_string())?;
+
+    // Encrypt the config
+    let encrypted = encrypt_api_key(&json)?;
+
+    // Store in keyring with "_config" suffix
+    let entry_name = format!("{}{}", model_id, CONFIG_SUFFIX);
+    let entry = Entry::new(SERVICE_NAME, &entry_name).map_err(|e| e.to_string())?;
+    entry.set_password(&encrypted).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+/// Retrieve model configuration from secure storage
+///
+/// Retrieves and decrypts the model config from the system keychain.
+pub fn retrieve_model_config(model_id: &str) -> Result<Option<ModelConfig>, String> {
+    let entry_name = format!("{}{}", model_id, CONFIG_SUFFIX);
+    let entry = Entry::new(SERVICE_NAME, &entry_name).map_err(|e| e.to_string())?;
+
+    match entry.get_password() {
+        Ok(encrypted) => {
+            let decrypted = decrypt_api_key(&encrypted)?;
+            let config: ModelConfig =
+                serde_json::from_str(&decrypted).map_err(|e| e.to_string())?;
+            Ok(Some(config))
+        }
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// Delete model configuration from secure storage
+pub fn delete_model_config(model_id: &str) -> Result<(), String> {
+    let entry_name = format!("{}{}", model_id, CONFIG_SUFFIX);
+    let entry = Entry::new(SERVICE_NAME, &entry_name).map_err(|e| e.to_string())?;
+
+    match entry.delete_credential() {
+        Ok(()) => Ok(()),
+        Err(keyring::Error::NoEntry) => Ok(()), // Already deleted
         Err(e) => Err(e.to_string()),
     }
 }
