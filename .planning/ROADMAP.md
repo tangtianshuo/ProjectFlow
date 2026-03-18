@@ -74,7 +74,7 @@
 3/3 plans complete
 - [x] 03-01-PLAN.md — Backend LLM integration (Rust)
 - [x] 03-02-PLAN.md — Frontend LLM UI (Vue)
-- [ ] 03-03-PLAN.md — Integration & wiring
+- [x] 03-03-PLAN.md — Integration & wiring
 
 **Success Criteria:**
 1. 用户可以在侧边栏打开 AI 助手面板
@@ -85,25 +85,38 @@
 
 ---
 
+## Phase 4: 适配国产LLM模型
+
+**Goal:** 扩展 LLM 助手以支持国产大语言模型（Kimi、DeepSeek、MiniMax），用户可配置每个模型的 baseurl、api_key、model_name
+
+**Requirements:**
+- LLM-07: Support Chinese LLM models (Kimi, DeepSeek, MiniMax)
+- LLM-08: Configurable base_url per model
+- LLM-09: Model selection UI
+
+**Plans:**
+1/2 plans executed
+- [x] 04-01-PLAN.md — Backend: Extend OpenAIClient with base_url, storage for model config
+- [ ] 04-02-PLAN.md — Frontend: Model selection UI and config inputs
+
+**Success Criteria:**
+1. 用户可以选择 Kimi、DeepSeek、MiniMax 模型
+2. 用户可以配置每个模型的 base_url
+3. 用户可以配置每个模型的 model_name
+4. Chat 使用配置的 base_url 进行 API 调用
+
+---
+
 ## Summary
 
-| Phase | Name | Requirements | Plans | Success Criteria |
-|-------|------|--------------|-------|------------------|
+| Phase | Name | Requirements | Plans | Status |
+|-------|------|--------------|-------|--------|
 | 1 | 暗色系 UI 优化 | Complete | 2/2 | Complete |
 | 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
-| 3 | LLM 文档助手 | Complete    | 2026-03-18 | In Progress |
+| 3 | LLM 文档助手 | Complete | 3/3 | Complete |
+| 4 | 1/2 | In Progress|  | Planned |
 
-**Total:** 3 phases | 21 requirements | 8 plans
-
-### Phase 4: 适配国产LLM模型 (kimi, deepseek, minimax) - 用户可配置模型、供应商、baseurl、apikey
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 3
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 4 to break down)
+**Total:** 4 phases | 24 requirements | 10 plans
 
 ---
 
