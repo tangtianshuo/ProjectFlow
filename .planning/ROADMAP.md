@@ -58,15 +58,44 @@
 
 ---
 
+## Phase 3: LLM 文档助手
+
+**Goal:** 实现 LLM AI 助手功能，集成到 ProjectFlow 桌面应用中。通过对话方式协助用户完成项目文档编写、项目问答、文档分析与建议。
+
+**Requirements:**
+- LLM-01: LLM panel UI in sidebar
+- LLM-02: OpenAI API integration
+- LLM-03: Encrypted API key storage
+- LLM-04: Project context auto-injection
+- LLM-05: Streaming response UI
+- LLM-06: Conversation history
+
+**Plans:**
+3/3 plans
+- [ ] 03-01-PLAN.md — Backend LLM integration (Rust)
+- [ ] 03-02-PLAN.md — Frontend LLM UI (Vue)
+- [ ] 03-03-PLAN.md — Integration & wiring
+
+**Success Criteria:**
+1. 用户可以在侧边栏打开 AI 助手面板
+2. 用户可以配置 OpenAI API Key（加密存储）
+3. 用户可以发送消息并接收流式响应
+4. 项目上下文自动注入到 prompts 中
+5. 对话历史可持久化存储
+
+---
+
 ## Summary
 
 | Phase | Name | Requirements | Plans | Success Criteria |
 |-------|------|--------------|-------|------------------|
-| 1 | 暗色系 UI 优化 | Complete    | 2 | 3/3 | Complete   | 2026-03-17 | 亮色系 UI 设计 | 5 | 3 | 5 |
+| 1 | 暗色系 UI 优化 | Complete | 2/2 | Complete |
+| 2 | 亮色系 UI 设计 | Complete | 3/3 | Complete |
+| 3 | LLM 文档助手 | 6 | 3/3 | In Progress |
 
-**Total:** 2 phases | 15 requirements | 5 plans
+**Total:** 3 phases | 21 requirements | 8 plans
 
 ---
 
 *Roadmap created: 2026-03-17*
-*Plans updated: 2026-03-17*
+*Plans updated: 2026-03-18*

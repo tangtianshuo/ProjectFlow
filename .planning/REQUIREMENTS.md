@@ -13,9 +13,9 @@
 
 ### 亮色系 UI
 
-- [ ] **LIGHT-01**: 实现亮色系主题（白色/浅灰色背景）
-- [ ] **LIGHT-02**: 亮色系使用柔和、不刺眼的图标颜色
-- [ ] **LIGHT-03**: 两套主题视觉风格逻辑一致
+- [x] **LIGHT-01**: 实现亮色系主题（白色/浅灰色背景）
+- [x] **LIGHT-02**: 亮色系使用柔和、不刺眼的图标颜色
+- [x] **LIGHT-03**: 两套主题视觉风格逻辑一致
 - [x] **LIGHT-04**: 支持暗色/亮色主题切换功能
 
 ### 优先级标签
@@ -37,7 +37,14 @@
 
 ## v2 Requirements
 
-暂无
+### LLM 文档助手
+
+- [ ] **LLM-01**: LLM panel UI in sidebar（侧边栏 AI 助手面板）
+- [ ] **LLM-02**: OpenAI API integration（OpenAI API 集成）
+- [ ] **LLM-03**: Encrypted API key storage（API Key 加密存储）
+- [ ] **LLM-04**: Project context auto-injection（项目上下文自动注入）
+- [ ] **LLM-05**: Streaming response UI（流式响应 UI）
+- [ ] **LLM-06**: Conversation history（对话历史持久化）
 
 ## Out of Scope
 
@@ -45,6 +52,9 @@
 |---------|--------|
 | 动态主题色 | 聚焦于暗色/亮色两套固定主题 |
 | 自定义主题 | 暂不需要用户自定义颜色 |
+| 代码辅助功能 | 后续阶段 |
+| 本地模型支持（Ollama） | 后续阶段 |
+| 更多 LLM 模型 | 后续扩展 |
 
 ## Traceability
 
@@ -53,9 +63,9 @@
 | DARK-01 | Phase 1 | Complete |
 | DARK-02 | Phase 1 | Complete |
 | DARK-03 | Phase 1 | Complete |
-| LIGHT-01 | Phase 2 | Pending |
-| LIGHT-02 | Phase 2 | Pending |
-| LIGHT-03 | Phase 2 | Pending |
+| LIGHT-01 | Phase 2 | Complete |
+| LIGHT-02 | Phase 2 | Complete |
+| LIGHT-03 | Phase 2 | Complete |
 | LIGHT-04 | Phase 2 | Complete |
 | PRIO-01 | Phase 1 | Complete |
 | PRIO-02 | Phase 1 | Complete |
@@ -65,13 +75,20 @@
 | DOC-01 | Phase 1 | Complete |
 | DOC-02 | Phase 2 | Complete |
 | DOC-03 | Phase 1 | Complete |
+| LLM-01 | Phase 3 | Pending |
+| LLM-02 | Phase 3 | Pending |
+| LLM-03 | Phase 3 | Pending |
+| LLM-04 | Phase 3 | Pending |
+| LLM-05 | Phase 3 | Pending |
+| LLM-06 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 15
-- Unmapped: 0 ✓
+- v2 requirements: 6 total
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial definition*
+*Last updated: 2026-03-18*
