@@ -87,6 +87,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 | 4 | Completed | 2/2 | 100% |
 | 5 | Completed | 3/3 | 100% |
 | 5.1 | Completed | 2/2 | 100% |
+| 6 | In Progress | 1/1 | 100% |
 
 ## Workflow
 
@@ -131,6 +132,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 - [Phase 05]: Migrate commands to use LitellmClient for multi-provider support
 - [Phase 05.1]: Added llm-gateway crate as dependency; kept reqwest implementation due to API differences
 - [Phase 05.1]: Use llm-gateway for Kimi/DeepSeek; keep reqwest for OpenAI/Anthropic
+- [Phase 06]: Use reqwest directly with Anthropic v1/messages API instead of outdated anthropic crate
 
 ## Current Phase Progress
 
@@ -151,3 +153,6 @@ See: `.planning/PROJECT.md` (updated 2026-03-17)
 **Phase 5.1: Gap Closure - llm-gateway**
 - 05.1-01-PLAN.md: COMPLETE (Added llm-gateway dependency, kept reqwest for API compatibility)
 - 05.1-02-PLAN.md: COMPLETE (Refactored LitellmClient to use llm-gateway for Chinese providers)
+
+**Phase 6: Anthropic SDK LLM Integration**
+- 06-01-PLAN.md: COMPLETE (Added Anthropic API support using reqwest with v1/messages endpoint)
