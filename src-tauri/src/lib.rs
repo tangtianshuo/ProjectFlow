@@ -69,6 +69,8 @@ pub fn run() {
             commands::llm::llm_delete_key,
             commands::llm::llm_chat,
             commands::llm::llm_get_models,
+            commands::llm::llm_save_model_config,
+            commands::llm::llm_get_model_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
