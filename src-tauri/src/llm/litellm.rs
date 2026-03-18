@@ -33,8 +33,13 @@ pub struct LitellmClient {
     model: String,
     /// Base URL for the API (e.g., "https://api.openai.com", "https://api.moonshot.cn/v1")
     base_url: String,
-    /// Provider identifier to detect Chinese providers
+    /// Provider identifier to detect providers
     provider_id: String,
+}
+
+/// Detect if a model is an Anthropic model (Claude)
+fn is_anthropic_model(model: &str) -> bool {
+    model.to_lowercase().starts_with("claude-")
 }
 
 /// Detect if a model/provider uses Chinese LLM services
@@ -72,6 +77,13 @@ impl LitellmClient {
     ///     Some("https://api.moonshot.cn/v1".to_string())
     /// );
     ///
+    /// // Anthropic (Claude)
+    /// let client = LitellmClient::new(
+    ///     "sk-ant-xxx".to_string(),
+    ///     "claude-3-opus-20240229".to_string(),
+    ///     Some("https://api.anthropic.com".to_string())
+    /// );
+    ///
     /// // Ollama (local)
     /// let client = LitellmClient::new(
     ///     "".to_string(),  // No API key needed for local
@@ -81,15 +93,46 @@ impl LitellmClient {
     /// ```
     pub fn new(api_key: String, model: String, base_url: Option<String>) -> Self {
         let client = Client::new();
-        let base_url = base_url.unwrap_or_else(|| "https://api.openai.com".to_string());
 
-        // Ensure base_url has the proper path for chat completions
-        let base_url = if base_url.ends_with("/v1") || base_url.contains("/v1/") {
-            base_url.clone()
-        } else if base_url.ends_with("/") {
-            format!("{}v1", base_url)
+        // Determine provider and set appropriate base_url
+        let (base_url, provider_id) = if let Some(url) = base_url {
+            let url_lower = url.to_lowercase();
+            if url_lower.contains("anthropic.com") {
+                // Anthropic uses a different API endpoint
+                ("https://api.anthropic.com".to_string(), "anthropic".to_string())
+            } else if url_lower.contains("moonshot.cn") {
+                // Ensure base_url has the proper path for chat completions
+                let url = if url.ends_with("/v1") || url.contains("/v1/") {
+                    url.clone()
+                } else if url.ends_with("/") {
+                    format!("{}v1", url)
+                } else {
+                    format!("{}/v1", url)
+                };
+                (url, "kimi".to_string())
+            } else if url_lower.contains("deepseek.com") {
+                let url = if url.ends_with("/v1") || url.contains("/v1/") {
+                    url.clone()
+                } else if url.ends_with("/") {
+                    format!("{}v1", url)
+                } else {
+                    format!("{}/v1", url)
+                };
+                (url, "deepseek".to_string())
+            } else {
+                // Other providers (OpenAI, Ollama, etc.)
+                let url = if url.ends_with("/v1") || url.contains("/v1/") {
+                    url.clone()
+                } else if url.ends_with("/") {
+                    format!("{}v1", url)
+                } else {
+                    format!("{}/v1", url)
+                };
+                (url, "".to_string())
+            }
         } else {
-            format!("{}/v1", base_url)
+            // Default to OpenAI
+            ("https://api.openai.com/v1".to_string(), "".to_string())
         };
 
         // Detect if this is a Chinese provider that should use llm-gateway
@@ -97,6 +140,8 @@ impl LitellmClient {
             "kimi".to_string()
         } else if base_url.contains("deepseek.com") {
             "deepseek".to_string()
+        } else if base_url.contains("anthropic.com") {
+            "anthropic".to_string()
         } else {
             "".to_string()
         };
@@ -140,6 +185,11 @@ impl LitellmClient {
         &self,
         messages: Vec<Message>,
     ) -> Result<futures_util::stream::BoxStream<'static, Result<String, String>>, String> {
+        log::info!("[LitellmClient] stream_chat called with model: {}", self.model);
+        log::info!("[LitellmClient] base_url: {}", self.base_url);
+        log::info!("[LitellmClient] provider_id: {}", self.provider_id);
+        log::info!("[LitellmClient] gateway_client is Some: {}", self.gateway_client.is_some());
+
         // Use llm-gateway for Chinese providers (Kimi, DeepSeek)
         if let Some(ref gateway_client) = self.gateway_client {
             // Convert messages to (role, content) tuples for llm-gateway
@@ -167,7 +217,116 @@ impl LitellmClient {
             return Ok(stream);
         }
 
-        // Fall back to reqwest for standard providers (OpenAI, Anthropic, Ollama)
+        // Use Anthropic API for Anthropic models (Claude)
+        if is_anthropic_model(&self.model) || self.provider_id == "anthropic" {
+            return self.stream_chat_anthropic(messages).await;
+        }
+
+        // Fall back to reqwest for standard providers (OpenAI, Ollama)
+        self.stream_chat_openai(messages).await
+    }
+
+    /// Stream chat using Anthropic's API
+    async fn stream_chat_anthropic(
+        &self,
+        messages: Vec<Message>,
+    ) -> Result<BoxStream<'static, Result<String, String>>, String> {
+        let url = "https://api.anthropic.com/v1/messages";
+
+        // Build messages for Anthropic format
+        // Extract system message if present
+        let mut system_prompt: Option<String> = None;
+        let user_messages: Vec<Message> = messages
+            .into_iter()
+            .filter_map(|m| {
+                if m.role == "system" {
+                    system_prompt = Some(m.content);
+                    None
+                } else {
+                    Some(m)
+                }
+            })
+            .collect();
+
+        let anthropic_messages: Vec<serde_json::Value> = user_messages
+            .into_iter()
+            .map(|m| {
+                serde_json::json!({
+                    "role": if m.role == "assistant" { "assistant" } else { "user" },
+                    "content": m.content
+                })
+            })
+            .collect();
+
+        let mut body = serde_json::json!({
+            "model": self.model,
+            "messages": anthropic_messages,
+            "max_tokens": 4096,
+            "stream": true,
+        });
+
+        if let Some(system) = system_prompt {
+            body["system"] = serde_json::json!([{ "type": "text", "text": system }]);
+        }
+
+        log::info!("[LitellmClient] Anthropic API request: {}", body);
+
+        let request = self
+            .client
+            .post(url)
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let byte_stream = request.bytes_stream();
+
+        let stream = byte_stream.map(|chunk_result: Result<bytes::Bytes, reqwest::Error>| {
+            match chunk_result {
+                Ok(bytes) => {
+                    // Parse SSE response
+                    let text = String::from_utf8_lossy(&bytes);
+                    let mut content = String::new();
+
+                    for line in text.lines() {
+                        if line.starts_with("data: ") {
+                            let data = &line[6..];
+                            if data == "[DONE]" {
+                                continue;
+                            }
+                            // Try to parse JSON and extract content
+                            if let Ok(resp) = serde_json::from_str::<serde_json::Value>(data) {
+                                if let Some(delta) = resp.get("delta").and_then(|d| d.get("text")) {
+                                    if let Some(c) = delta.as_str() {
+                                        content.push_str(c);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if content.is_empty() {
+                        Ok(String::new())
+                    } else {
+                        Ok(content)
+                    }
+                }
+                Err(e) => Err(e.to_string()),
+            }
+        });
+
+        let stream: BoxStream<'static, Result<String, String>> = stream.boxed();
+        Ok(stream)
+    }
+
+    /// Stream chat using OpenAI-compatible API
+    async fn stream_chat_openai(
+        &self,
+        messages: Vec<Message>,
+    ) -> Result<BoxStream<'static, Result<String, String>>, String> {
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = serde_json::json!({
@@ -175,6 +334,13 @@ impl LitellmClient {
             "messages": messages,
             "stream": true,
         });
+
+        // DEBUG: Log the request details
+        log::info!("[LitellmClient] DEBUG: Request URL: {}", url);
+        log::info!("[LitellmClient] DEBUG: Request model: {}", self.model);
+        log::info!("[LitellmClient] DEBUG: Request base_url: {}", self.base_url);
+        log::info!("[LitellmClient] DEBUG: Request Authorization header: Bearer ***");
+        log::info!("[LitellmClient] DEBUG: Request body: {}", body);
 
         let request = self
             .client
@@ -255,7 +421,81 @@ impl LitellmClient {
             return Ok(response.text);
         }
 
-        // Fall back to reqwest for standard providers (OpenAI, Anthropic, Ollama)
+        // Use Anthropic API for Anthropic models (Claude)
+        if is_anthropic_model(&self.model) || self.provider_id == "anthropic" {
+            return self.chat_anthropic(messages).await;
+        }
+
+        // Fall back to reqwest for standard providers (OpenAI, Ollama)
+        self.chat_openai(messages).await
+    }
+
+    /// Non-streaming chat using Anthropic's API
+    async fn chat_anthropic(&self, messages: Vec<Message>) -> Result<String, String> {
+        let url = "https://api.anthropic.com/v1/messages";
+
+        // Build messages for Anthropic format
+        let mut system_prompt: Option<String> = None;
+        let user_messages: Vec<Message> = messages
+            .into_iter()
+            .filter_map(|m| {
+                if m.role == "system" {
+                    system_prompt = Some(m.content);
+                    None
+                } else {
+                    Some(m)
+                }
+            })
+            .collect();
+
+        let anthropic_messages: Vec<serde_json::Value> = user_messages
+            .into_iter()
+            .map(|m| {
+                serde_json::json!({
+                    "role": if m.role == "assistant" { "assistant" } else { "user" },
+                    "content": m.content
+                })
+            })
+            .collect();
+
+        let mut body = serde_json::json!({
+            "model": self.model,
+            "messages": anthropic_messages,
+            "max_tokens": 4096,
+        });
+
+        if let Some(system) = system_prompt {
+            body["system"] = serde_json::json!([{ "type": "text", "text": system }]);
+        }
+
+        let response = self
+            .client
+            .post(url)
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let json: serde_json::Value = response.json().await.map_err(|e| e.to_string())?;
+
+        if let Some(content) = json
+            .get("content")
+            .and_then(|c| c.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|c| c.get("text"))
+            .and_then(|c| c.as_str())
+        {
+            Ok(content.to_string())
+        } else {
+            Err("Failed to parse Anthropic response".to_string())
+        }
+    }
+
+    /// Non-streaming chat using OpenAI-compatible API
+    async fn chat_openai(&self, messages: Vec<Message>) -> Result<String, String> {
         let url = format!("{}/chat/completions", self.base_url);
 
         let body = serde_json::json!({
@@ -347,5 +587,13 @@ mod tests {
         );
         assert!(client.base_url.contains("localhost:11434"));
         assert!(client.base_url.contains("/v1/chat/completions"));
+    }
+
+    #[test]
+    fn test_anthropic_model_detection() {
+        assert!(is_anthropic_model("claude-3-opus"));
+        assert!(is_anthropic_model("claude-3-sonnet"));
+        assert!(!is_anthropic_model("gpt-4o"));
+        assert!(!is_anthropic_model("moonshot-v1-8k"));
     }
 }

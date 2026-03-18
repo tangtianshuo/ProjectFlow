@@ -34,4 +34,4 @@ keyring = "3"
 aes-gcm = "0.10"
 base64 = "0.22"
 llm-gateway = "0.1"
-anthropic = "0.25"
+# anthropic-ai-sdk removed - using reqwest directly for Anthropic API
