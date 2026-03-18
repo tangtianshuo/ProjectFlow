@@ -150,6 +150,29 @@
 
 ---
 
+## Phase 6: Anthropic SDK LLM 客户端
+
+**Goal:** 使用 Anthropic SDK 替换当前的 llm-gateway 实现，使用官方 Anthropic SDK 进行 Anthropic 模型（Claude）的 API 调用
+
+**Requirements:**
+- LLM-10: 使用 Anthropic SDK 作为 Anthropic 模型的 API 接入层
+
+**Plans:**
+1/1 plans complete
+
+Plans:
+- [x] 06-01-PLAN.md — Add anthropic crate, refactor LitellmClient to use Anthropic SDK for Claude models
+
+**Success Criteria:**
+1. Anthropic SDK (anthropic crate) 添加到 Cargo.toml
+2. LitellmClient 检测 Anthropic 模型 (claude-*)
+3. 流式聊天使用 Anthropic SDK
+4. 非流式聊天使用 Anthropic SDK
+5. cargo check 通过
+6. 现有其他提供商功能继续工作
+
+---
+
 ## Summary
 
 | Phase | Name | Requirements | Plans | Status |
@@ -159,19 +182,10 @@
 | 3 | LLM 文档助手 | Complete | 3/3 | Complete |
 | 4 | 适配国产LLM模型 | Complete | 2/2 | Complete |
 | 5 | 使用 litellm_rs 重构 LLM 接入层 | 4 | 3/3 | Complete |
-| 5.1 | 1/1 | Complete    | 2026-03-18 | Complete |
+| 5.1 | Gap Closure - llm-gateway | Complete | 2/2 | Complete |
+| 6 | Anthropic SDK LLM 客户端 | Complete    | 2026-03-18 | In Progress |
 
-**Total:** 6 phases | 29 requirements | 13 plans
-
-### Phase 6: Anthropic SDK LLM 客户端
-
-**Goal:** 使用 Anthropic SDK 替换当前的 llm-gateway 实现
-**Requirements**: TBD
-**Depends on:** Phase 5.1
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 6 to break down)
+**Total:** 7 phases | 30 requirements | 14 plans
 
 ---
 
