@@ -4,7 +4,7 @@ import Modal from "../../ui/Modal.vue";
 import Input from "../../ui/Input.vue";
 import Button from "../../ui/Button.vue";
 import { useLlmStore, DEFAULT_MODEL_CONFIGS } from "../../../stores/llmStore";
-import { llmApi, type ModelConfig } from "../../../lib/api";
+import { type ModelConfig } from "../../../lib/api";
 
 interface Props {
   open: boolean;
@@ -23,7 +23,6 @@ const apiKey = ref("");
 const baseUrl = ref("");
 const modelName = ref("");
 const loading = ref(false);
-const status = ref<"idle" | "configured" | "not_configured">("idle");
 
 const models = computed(() => {
   return Object.entries(DEFAULT_MODEL_CONFIGS).map(([id, config]) => ({
@@ -32,36 +31,30 @@ const models = computed(() => {
   }));
 });
 
-onMounted(async () => {
+onMounted(() => {
   selectedModel.value = llmStore.selectedModelId || llmStore.selectedModel;
-  await checkStatus();
-  await loadModelConfig();
+  loadModelConfig();
 });
 
-watch(selectedModel, async () => {
-  await checkStatus();
-  await loadModelConfig();
+watch(selectedModel, () => {
+  loadModelConfig();
 });
 
-async function loadModelConfig() {
-  const config = await llmStore.getModelConfig(selectedModel.value);
-  if (config) {
+function loadModelConfig() {
+  const config = llmStore.modelConfig;
+  if (config && config.model_id === selectedModel.value) {
     baseUrl.value = config.base_url;
     modelName.value = config.model_name;
-    apiKey.value = ""; // Don't show saved API key
+    apiKey.value = config.api_key;
   } else {
     // Use defaults
     const defaults = DEFAULT_MODEL_CONFIGS[selectedModel.value];
     if (defaults) {
       baseUrl.value = defaults.base_url;
       modelName.value = defaults.default_model;
+      apiKey.value = "";
     }
   }
-}
-
-async function checkStatus() {
-  const hasKey = await llmApi.getKeyStatus(selectedModel.value);
-  status.value = hasKey ? "configured" : "not_configured";
 }
 
 async function saveKey() {
@@ -77,29 +70,16 @@ async function saveKey() {
       api_key: apiKey.value,
     };
     console.log("[LlmSettings] Saving - selectedModel:", selectedModel.value, "config:", config);
-    await llmStore.saveModelConfig(selectedModel.value, config);
+    await llmStore.saveModelConfig(config);
+    
     // Also update the store's selected model ID and selected model
     llmStore.selectedModelId = selectedModel.value;
     llmStore.selectedModel = selectedModel.value;
-    console.log("[LlmSettings] After save - store.selectedModelId:", llmStore.selectedModelId, "store.selectedModel:", llmStore.selectedModel);
-    apiKey.value = "";
-    status.value = "configured";
+    
     // Close the dialog after successful save
     emit("close");
   } catch (e) {
     console.error("Failed to save API key:", e);
-  } finally {
-    loading.value = false;
-  }
-}
-
-async function deleteKey() {
-  loading.value = true;
-  try {
-    await llmStore.deleteApiKey(selectedModel.value);
-    status.value = "not_configured";
-  } catch (e) {
-    console.error("Failed to delete API key:", e);
   } finally {
     loading.value = false;
   }
@@ -163,47 +143,22 @@ function close() {
           placeholder="sk-..."
         />
       </div>
-
-      <!-- Status indicator -->
-      <div class="flex items-center gap-2">
-        <div
-          :class="[
-            'w-2 h-2 rounded-full',
-            status === 'configured' ? 'bg-green-500' : 'bg-red-500'
-          ]"
-        />
-        <span class="text-sm text-[var(--text-secondary)]">
-          {{ status === "configured" ? "已配置" : "未配置" }}
-        </span>
-      </div>
     </div>
 
     <template #footer>
-      <div class="flex justify-between">
+      <div class="flex justify-end gap-2">
+        <Button variant="secondary" size="sm" @click="close">
+          取消
+        </Button>
         <Button
-          v-if="status === 'configured'"
-          variant="danger"
+          variant="primary"
           size="sm"
           :loading="loading"
-          @click="deleteKey"
+          :disabled="!apiKey.trim()"
+          @click="saveKey"
         >
-          删除 Key
+          保存
         </Button>
-        <div v-else />
-        <div class="flex gap-2">
-          <Button variant="secondary" size="sm" @click="close">
-            取消
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            :loading="loading"
-            :disabled="!apiKey.trim()"
-            @click="saveKey"
-          >
-            保存
-          </Button>
-        </div>
       </div>
     </template>
   </Modal>

@@ -1,6 +1,6 @@
-use rusqlite::{Connection, Result, params};
-use std::sync::Mutex;
 use chrono::Utc;
+use rusqlite::{params, Connection, Result};
+use std::sync::Mutex;
 use uuid::Uuid;
 
 // 辅助函数：解析日期字符串，支持 YYYY-MM-DD 和 RFC3339 格式
@@ -99,9 +99,12 @@ impl Database {
         )?;
 
         // Add deleted_at column if not exists (migration for existing databases)
-        conn.execute("ALTER TABLE projects ADD COLUMN deleted_at TEXT", []).ok();
-        conn.execute("ALTER TABLE tasks ADD COLUMN deleted_at TEXT", []).ok();
-        conn.execute("ALTER TABLE documents ADD COLUMN deleted_at TEXT", []).ok();
+        conn.execute("ALTER TABLE projects ADD COLUMN deleted_at TEXT", [])
+            .ok();
+        conn.execute("ALTER TABLE tasks ADD COLUMN deleted_at TEXT", [])
+            .ok();
+        conn.execute("ALTER TABLE documents ADD COLUMN deleted_at TEXT", [])
+            .ok();
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS users (
@@ -144,18 +147,60 @@ impl Database {
         )?;
 
         // Add deleted_at column if not exists for migration
-        conn.execute("ALTER TABLE milestones ADD COLUMN deleted_at TEXT", []).ok();
+        conn.execute("ALTER TABLE milestones ADD COLUMN deleted_at TEXT", [])
+            .ok();
 
         // Create indexes
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)", [])?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)", [])?;
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_documents_project_id ON documents(project_id)", [])?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks(parent_id)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_documents_project_id ON documents(project_id)",
+            [],
+        )?;
+
+        // LLM Settings table
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS llm_settings (
+                id INTEGER PRIMARY KEY,
+                provider TEXT NOT NULL DEFAULT 'openai',
+                api_key TEXT,
+                api_url TEXT NOT NULL DEFAULT 'https://api.openai.com/v1',
+                model TEXT NOT NULL DEFAULT 'gpt-4o-mini',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )",
+            [],
+        )?;
+
+        // Insert default config if not exists
+        let count: i32 =
+            conn.query_row("SELECT COUNT(*) FROM llm_settings", [], |row| row.get(0))?;
+        if count == 0 {
+            let now = Utc::now().to_rfc3339();
+            conn.execute(
+                "INSERT INTO llm_settings (id, provider, api_key, api_url, model, created_at, updated_at)
+                 VALUES (1, 'openai', '', 'https://api.openai.com/v1', 'gpt-4o-mini', ?1, ?2)",
+                params![now, now],
+            )?;
+        }
 
         Ok(())
     }
 
     // Project operations
-    pub fn create_project(&self, name: &str, description: Option<&str>, start_date: Option<&str>, end_date: Option<&str>) -> Result<crate::models::Project> {
+    pub fn create_project(
+        &self,
+        name: &str,
+        description: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<crate::models::Project> {
         let conn = self.conn.lock().unwrap();
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
@@ -185,21 +230,45 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, name, description, status, start_date, end_date, owner_id, settings, created_at, updated_at, deleted_at FROM projects WHERE deleted_at IS NULL ORDER BY created_at DESC")?;
 
-        let projects = stmt.query_map([], |row| {
-            Ok(crate::models::Project {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                status: row.get(3)?,
-                start_date: row.get::<_, Option<String>>(4)?.and_then(|s| parse_date(&s)),
-                end_date: row.get::<_, Option<String>>(5)?.and_then(|s| parse_date(&s)),
-                owner_id: row.get(6)?,
-                settings: row.get(7)?,
-                created_at: row.get::<_, String>(8).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(9).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let projects = stmt
+            .query_map([], |row| {
+                Ok(crate::models::Project {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    description: row.get(2)?,
+                    status: row.get(3)?,
+                    start_date: row
+                        .get::<_, Option<String>>(4)?
+                        .and_then(|s| parse_date(&s)),
+                    end_date: row
+                        .get::<_, Option<String>>(5)?
+                        .and_then(|s| parse_date(&s)),
+                    owner_id: row.get(6)?,
+                    settings: row.get(7)?,
+                    created_at: row
+                        .get::<_, String>(8)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(9)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(projects)
     }
@@ -215,13 +284,35 @@ impl Database {
                 name: row.get(1)?,
                 description: row.get(2)?,
                 status: row.get(3)?,
-                start_date: row.get::<_, Option<String>>(4)?.and_then(|s| parse_date(&s)),
-                end_date: row.get::<_, Option<String>>(5)?.and_then(|s| parse_date(&s)),
+                start_date: row
+                    .get::<_, Option<String>>(4)?
+                    .and_then(|s| parse_date(&s)),
+                end_date: row
+                    .get::<_, Option<String>>(5)?
+                    .and_then(|s| parse_date(&s)),
                 owner_id: row.get(6)?,
                 settings: row.get(7)?,
-                created_at: row.get::<_, String>(8).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(9).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
+                created_at: row
+                    .get::<_, String>(8)
+                    .map(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .unwrap()
+                            .with_timezone(&Utc)
+                    })
+                    .unwrap_or_else(|_| Utc::now()),
+                updated_at: row
+                    .get::<_, String>(9)
+                    .map(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .unwrap()
+                            .with_timezone(&Utc)
+                    })
+                    .unwrap_or_else(|_| Utc::now()),
+                deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| {
+                    chrono::DateTime::parse_from_rfc3339(&s)
+                        .ok()
+                        .map(|d| d.with_timezone(&Utc))
+                }),
             }))
         } else {
             Ok(None)
@@ -231,14 +322,20 @@ impl Database {
     pub fn delete_project(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE projects SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE projects SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
     pub fn restore_project(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE projects SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE projects SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
@@ -246,26 +343,58 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, name, description, status, start_date, end_date, owner_id, settings, created_at, updated_at, deleted_at FROM projects WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC")?;
 
-        let projects = stmt.query_map([], |row| {
-            Ok(crate::models::Project {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                description: row.get(2)?,
-                status: row.get(3)?,
-                start_date: row.get::<_, Option<String>>(4)?.and_then(|s| parse_date(&s)),
-                end_date: row.get::<_, Option<String>>(5)?.and_then(|s| parse_date(&s)),
-                owner_id: row.get(6)?,
-                settings: row.get(7)?,
-                created_at: row.get::<_, String>(8).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(9).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let projects = stmt
+            .query_map([], |row| {
+                Ok(crate::models::Project {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    description: row.get(2)?,
+                    status: row.get(3)?,
+                    start_date: row
+                        .get::<_, Option<String>>(4)?
+                        .and_then(|s| parse_date(&s)),
+                    end_date: row
+                        .get::<_, Option<String>>(5)?
+                        .and_then(|s| parse_date(&s)),
+                    owner_id: row.get(6)?,
+                    settings: row.get(7)?,
+                    created_at: row
+                        .get::<_, String>(8)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(9)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(10)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(projects)
     }
 
-    pub fn update_project(&self, id: &str, name: Option<&str>, description: Option<&str>, status: Option<i32>, start_date: Option<&str>, end_date: Option<&str>) -> Result<()> {
+    pub fn update_project(
+        &self,
+        id: &str,
+        name: Option<&str>,
+        description: Option<&str>,
+        status: Option<i32>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+    ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
 
@@ -294,7 +423,11 @@ impl Database {
             params_vec.push(Box::new(v.to_string()));
         }
 
-        let sql = format!("UPDATE projects SET {} WHERE id = ?{}", updates.join(", "), params_vec.len() + 1);
+        let sql = format!(
+            "UPDATE projects SET {} WHERE id = ?{}",
+            updates.join(", "),
+            params_vec.len() + 1
+        );
         params_vec.push(Box::new(id.to_string()));
 
         let mut stmt = conn.prepare(&sql)?;
@@ -305,7 +438,17 @@ impl Database {
     }
 
     // Task operations
-    pub fn create_task(&self, project_id: &str, parent_id: Option<&str>, title: &str, description: Option<&str>, assignee_id: Option<&str>, start_date: Option<&str>, due_date: Option<&str>, estimated_hours: Option<f64>) -> Result<crate::models::Task> {
+    pub fn create_task(
+        &self,
+        project_id: &str,
+        parent_id: Option<&str>,
+        title: &str,
+        description: Option<&str>,
+        assignee_id: Option<&str>,
+        start_date: Option<&str>,
+        due_date: Option<&str>,
+        estimated_hours: Option<f64>,
+    ) -> Result<crate::models::Task> {
         let conn = self.conn.lock().unwrap();
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
@@ -344,32 +487,69 @@ impl Database {
              FROM tasks WHERE project_id = ?1 AND deleted_at IS NULL ORDER BY position, created_at"
         )?;
 
-        let tasks = stmt.query_map(params![project_id], |row| {
-            Ok(crate::models::Task {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                parent_id: row.get(2)?,
-                title: row.get(3)?,
-                description: row.get(4)?,
-                status: row.get(5)?,
-                priority: row.get(6)?,
-                assignee_id: row.get(7)?,
-                start_date: row.get::<_, Option<String>>(8)?.and_then(|s| parse_date(&s)),
-                due_date: row.get::<_, Option<String>>(9)?.and_then(|s| parse_date(&s)),
-                estimated_hours: row.get(10)?,
-                actual_hours: row.get(11)?,
-                progress: row.get(12)?,
-                position: row.get(13)?,
-                created_at: row.get::<_, String>(14).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(15).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(16)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let tasks = stmt
+            .query_map(params![project_id], |row| {
+                Ok(crate::models::Task {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    parent_id: row.get(2)?,
+                    title: row.get(3)?,
+                    description: row.get(4)?,
+                    status: row.get(5)?,
+                    priority: row.get(6)?,
+                    assignee_id: row.get(7)?,
+                    start_date: row
+                        .get::<_, Option<String>>(8)?
+                        .and_then(|s| parse_date(&s)),
+                    due_date: row
+                        .get::<_, Option<String>>(9)?
+                        .and_then(|s| parse_date(&s)),
+                    estimated_hours: row.get(10)?,
+                    actual_hours: row.get(11)?,
+                    progress: row.get(12)?,
+                    position: row.get(13)?,
+                    created_at: row
+                        .get::<_, String>(14)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(15)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(16)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(tasks)
     }
 
-    pub fn update_task(&self, id: &str, title: Option<&str>, description: Option<&str>, status: Option<i32>, priority: Option<i32>, assignee_id: Option<&str>, start_date: Option<&str>, due_date: Option<&str>, estimated_hours: Option<f64>, actual_hours: Option<f64>, progress: Option<f64>) -> Result<()> {
+    pub fn update_task(
+        &self,
+        id: &str,
+        title: Option<&str>,
+        description: Option<&str>,
+        status: Option<i32>,
+        priority: Option<i32>,
+        assignee_id: Option<&str>,
+        start_date: Option<&str>,
+        due_date: Option<&str>,
+        estimated_hours: Option<f64>,
+        actual_hours: Option<f64>,
+        progress: Option<f64>,
+    ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
 
@@ -424,7 +604,8 @@ impl Database {
         let sql = format!("UPDATE tasks SET {} WHERE id = ?", updates.join(", "));
         let mut stmt = conn.prepare(&sql)?;
 
-        let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+        let params_refs: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
         stmt.execute(params_refs.as_slice())?;
 
         Ok(())
@@ -433,14 +614,20 @@ impl Database {
     pub fn delete_task(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE tasks SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE tasks SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
     pub fn restore_task(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE tasks SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE tasks SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
@@ -451,33 +638,62 @@ impl Database {
              FROM tasks WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
         )?;
 
-        let tasks = stmt.query_map([], |row| {
-            Ok(crate::models::Task {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                parent_id: row.get(2)?,
-                title: row.get(3)?,
-                description: row.get(4)?,
-                status: row.get(5)?,
-                priority: row.get(6)?,
-                assignee_id: row.get(7)?,
-                start_date: row.get::<_, Option<String>>(8)?.and_then(|s| parse_date(&s)),
-                due_date: row.get::<_, Option<String>>(9)?.and_then(|s| parse_date(&s)),
-                estimated_hours: row.get(10)?,
-                actual_hours: row.get(11)?,
-                progress: row.get(12)?,
-                position: row.get(13)?,
-                created_at: row.get::<_, String>(14).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(15).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(16)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let tasks = stmt
+            .query_map([], |row| {
+                Ok(crate::models::Task {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    parent_id: row.get(2)?,
+                    title: row.get(3)?,
+                    description: row.get(4)?,
+                    status: row.get(5)?,
+                    priority: row.get(6)?,
+                    assignee_id: row.get(7)?,
+                    start_date: row
+                        .get::<_, Option<String>>(8)?
+                        .and_then(|s| parse_date(&s)),
+                    due_date: row
+                        .get::<_, Option<String>>(9)?
+                        .and_then(|s| parse_date(&s)),
+                    estimated_hours: row.get(10)?,
+                    actual_hours: row.get(11)?,
+                    progress: row.get(12)?,
+                    position: row.get(13)?,
+                    created_at: row
+                        .get::<_, String>(14)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(15)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(16)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(tasks)
     }
 
     // Document operations
-    pub fn create_document(&self, project_id: Option<&str>, title: &str, content: Option<&str>) -> Result<crate::models::Document> {
+    pub fn create_document(
+        &self,
+        project_id: Option<&str>,
+        title: &str,
+        content: Option<&str>,
+    ) -> Result<crate::models::Document> {
         let conn = self.conn.lock().unwrap();
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
@@ -501,23 +717,46 @@ impl Database {
         })
     }
 
-    pub fn get_documents_by_project(&self, project_id: &str) -> Result<Vec<crate::models::Document>> {
+    pub fn get_documents_by_project(
+        &self,
+        project_id: &str,
+    ) -> Result<Vec<crate::models::Document>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, project_id, title, content, file_path, current_version, created_at, updated_at, deleted_at FROM documents WHERE project_id = ?1 AND deleted_at IS NULL ORDER BY title")?;
 
-        let docs = stmt.query_map(params![project_id], |row| {
-            Ok(crate::models::Document {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                file_path: row.get(4)?,
-                current_version: row.get(5)?,
-                created_at: row.get::<_, String>(6).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(7).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let docs = stmt
+            .query_map(params![project_id], |row| {
+                Ok(crate::models::Document {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    file_path: row.get(4)?,
+                    current_version: row.get(5)?,
+                    created_at: row
+                        .get::<_, String>(6)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(7)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(docs)
     }
@@ -526,24 +765,49 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, project_id, title, content, file_path, current_version, created_at, updated_at, deleted_at FROM documents WHERE deleted_at IS NULL ORDER BY title")?;
 
-        let docs = stmt.query_map([], |row| {
-            Ok(crate::models::Document {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                file_path: row.get(4)?,
-                current_version: row.get(5)?,
-                created_at: row.get::<_, String>(6).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(7).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let docs = stmt
+            .query_map([], |row| {
+                Ok(crate::models::Document {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    file_path: row.get(4)?,
+                    current_version: row.get(5)?,
+                    created_at: row
+                        .get::<_, String>(6)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(7)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(docs)
     }
 
-    pub fn update_document(&self, id: &str, title: Option<&str>, content: Option<&str>) -> Result<()> {
+    pub fn update_document(
+        &self,
+        id: &str,
+        title: Option<&str>,
+        content: Option<&str>,
+    ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
 
@@ -558,14 +822,20 @@ impl Database {
     pub fn delete_document(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE documents SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE documents SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
     pub fn restore_document(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE documents SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE documents SET deleted_at = NULL, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
@@ -573,25 +843,51 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, project_id, title, content, file_path, current_version, created_at, updated_at, deleted_at FROM documents WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC")?;
 
-        let docs = stmt.query_map([], |row| {
-            Ok(crate::models::Document {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                file_path: row.get(4)?,
-                current_version: row.get(5)?,
-                created_at: row.get::<_, String>(6).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(7).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let docs = stmt
+            .query_map([], |row| {
+                Ok(crate::models::Document {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    file_path: row.get(4)?,
+                    current_version: row.get(5)?,
+                    created_at: row
+                        .get::<_, String>(6)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(7)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(docs)
     }
 
     // Milestone operations
-    pub fn create_milestone(&self, project_id: &str, title: &str, description: Option<&str>, target_date: Option<&str>) -> Result<crate::models::Milestone> {
+    pub fn create_milestone(
+        &self,
+        project_id: &str,
+        title: &str,
+        description: Option<&str>,
+        target_date: Option<&str>,
+    ) -> Result<crate::models::Milestone> {
         let conn = self.conn.lock().unwrap();
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().to_rfc3339();
@@ -615,31 +911,63 @@ impl Database {
         })
     }
 
-    pub fn get_milestones_by_project(&self, project_id: &str) -> Result<Vec<crate::models::Milestone>> {
+    pub fn get_milestones_by_project(
+        &self,
+        project_id: &str,
+    ) -> Result<Vec<crate::models::Milestone>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT id, project_id, title, description, target_date, status, created_at, updated_at, deleted_at
              FROM milestones WHERE project_id = ?1 AND deleted_at IS NULL ORDER BY target_date"
         )?;
 
-        let milestones = stmt.query_map(params![project_id], |row| {
-            Ok(crate::models::Milestone {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                title: row.get(2)?,
-                description: row.get(3)?,
-                target_date: row.get::<_, Option<String>>(4)?.and_then(|s| parse_date(&s)),
-                status: row.get(5)?,
-                created_at: row.get::<_, String>(6).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                updated_at: row.get::<_, String>(7).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
-                deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| chrono::DateTime::parse_from_rfc3339(&s).ok().map(|d| d.with_timezone(&Utc))),
-            })
-        })?.collect::<Result<Vec<_>>>()?;
+        let milestones = stmt
+            .query_map(params![project_id], |row| {
+                Ok(crate::models::Milestone {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    title: row.get(2)?,
+                    description: row.get(3)?,
+                    target_date: row
+                        .get::<_, Option<String>>(4)?
+                        .and_then(|s| parse_date(&s)),
+                    status: row.get(5)?,
+                    created_at: row
+                        .get::<_, String>(6)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    updated_at: row
+                        .get::<_, String>(7)
+                        .map(|s| {
+                            chrono::DateTime::parse_from_rfc3339(&s)
+                                .unwrap()
+                                .with_timezone(&Utc)
+                        })
+                        .unwrap_or_else(|_| Utc::now()),
+                    deleted_at: row.get::<_, Option<String>>(8)?.and_then(|s| {
+                        chrono::DateTime::parse_from_rfc3339(&s)
+                            .ok()
+                            .map(|d| d.with_timezone(&Utc))
+                    }),
+                })
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(milestones)
     }
 
-    pub fn update_milestone(&self, id: &str, title: Option<&str>, description: Option<&str>, target_date: Option<&str>, status: Option<i32>) -> Result<()> {
+    pub fn update_milestone(
+        &self,
+        id: &str,
+        title: Option<&str>,
+        description: Option<&str>,
+        target_date: Option<&str>,
+        status: Option<i32>,
+    ) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
 
@@ -668,7 +996,8 @@ impl Database {
         let sql = format!("UPDATE milestones SET {} WHERE id = ?", updates.join(", "));
         let mut stmt = conn.prepare(&sql)?;
 
-        let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+        let params_refs: Vec<&dyn rusqlite::ToSql> =
+            params_vec.iter().map(|p| p.as_ref()).collect();
         stmt.execute(params_refs.as_slice())?;
 
         Ok(())
@@ -677,7 +1006,58 @@ impl Database {
     pub fn delete_milestone(&self, id: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let now = Utc::now().to_rfc3339();
-        conn.execute("UPDATE milestones SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2", params![now, id])?;
+        conn.execute(
+            "UPDATE milestones SET deleted_at = ?1, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
+
+    // LLM Settings operations
+    pub fn get_llm_settings(&self) -> Result<LlmSettings> {
+        let conn = self.conn.lock().unwrap();
+        let settings = conn.query_row(
+            "SELECT id, provider, api_key, api_url, model, created_at, updated_at FROM llm_settings WHERE id = 1",
+            [],
+            |row| {
+                Ok(LlmSettings {
+                    id: row.get(0)?,
+                    provider: row.get(1)?,
+                    api_key: row.get(2)?,
+                    api_url: row.get(3)?,
+                    model: row.get(4)?,
+                    created_at: row.get::<_, String>(5).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                    updated_at: row.get::<_, String>(6).map(|s| chrono::DateTime::parse_from_rfc3339(&s).unwrap().with_timezone(&Utc)).unwrap_or_else(|_| Utc::now()),
+                })
+            },
+        )?;
+        Ok(settings)
+    }
+
+    pub fn update_llm_settings(
+        &self,
+        provider: &str,
+        api_key: &str,
+        api_url: &str,
+        model: &str,
+    ) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+        let now = Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE llm_settings SET provider = ?1, api_key = ?2, api_url = ?3, model = ?4, updated_at = ?5 WHERE id = 1",
+            params![provider, api_key, api_url, model, now],
+        )?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LlmSettings {
+    pub id: i32,
+    pub provider: String,
+    pub api_key: Option<String>,
+    pub api_url: String,
+    pub model: String,
+    pub created_at: chrono::DateTime<Utc>,
+    pub updated_at: chrono::DateTime<Utc>,
 }

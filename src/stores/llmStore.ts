@@ -1,64 +1,86 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { llmApi, type LlmMessage, type ModelConfig } from "../lib/api";
 
-// Default model configurations
+export type LLMProvider = "openai" | "anthropic" | "openai-compatible";
+
 export const DEFAULT_MODEL_CONFIGS: Record<string, { name: string; base_url: string; default_model: string }> = {
-  "kimi": { name: "Kimi", base_url: "https://api.moonshot.cn", default_model: "moonshot-v1-8k" },
-  "deepseek": { name: "DeepSeek", base_url: "https://api.deepseek.com", default_model: "deepseek-chat" },
-  "minimax": { name: "MiniMax", base_url: "https://api.minimax.chat", default_model: "abab6.5s-chat" },
-  "gpt-4o": { name: "GPT-4o", base_url: "https://api.openai.com/v1", default_model: "gpt-4o" },
-  "gpt-4o-mini": { name: "GPT-4o Mini", base_url: "https://api.openai.com/v1", default_model: "gpt-4o-mini" },
-  "gpt-4-turbo": { name: "GPT-4 Turbo", base_url: "https://api.openai.com/v1", default_model: "gpt-4-turbo" },
-  "gpt-3.5-turbo": { name: "GPT-3.5 Turbo", base_url: "https://api.openai.com/v1", default_model: "gpt-3.5-turbo" },
+  "openai": { name: "OpenAI", base_url: "https://api.openai.com/v1", default_model: "gpt-4o" },
+  "anthropic": { name: "Anthropic", base_url: "https://api.anthropic.com", default_model: "claude-3-5-sonnet-20241022" },
+  "openai-compatible": { name: "OpenAI Compatible", base_url: "https://api.openai.com/v1", default_model: "gpt-4o-mini" },
+  "kimi": { name: "Kimi", base_url: "https://api.moonshot.cn/v1", default_model: "moonshot-v1-8k" },
+  "deepseek": { name: "DeepSeek", base_url: "https://api.deepseek.com/v1", default_model: "deepseek-chat" },
+  "minimax": { name: "MiniMax", base_url: "https://api.minimax.chat/v1", default_model: "abab6.5s-chat" },
 };
 
 export const useLlmStore = defineStore("llm", () => {
   // State
   const messages = ref<LlmMessage[]>([]);
   const isStreaming = ref(false);
-  const currentStreamingContent = ref("");
-  const apiKeyStatus = ref<Record<string, boolean>>({});
+  const streamingContent = ref("");
   const settingsOpen = ref(false);
   const selectedModel = ref("gpt-4o");
   const error = ref<string | null>(null);
-  const modelConfigs = ref<Record<string, ModelConfig>>({});
+  const sidecarStarted = ref(false);
+  const isStarting = ref(false);
+  const isLoading = ref(true);
+  
+  // Model Config (loaded from database)
+  const modelConfig = ref<ModelConfig | null>(null);
+
   // Load saved model from localStorage
   const savedModelId = localStorage.getItem("selectedModelId");
-  const selectedModelId = ref(savedModelId || "gpt-4o");
+  const selectedModelId = ref(savedModelId || "openai");
 
   // Watch for model changes and save to localStorage
   watch(selectedModelId, (newValue) => {
     localStorage.setItem("selectedModelId", newValue);
   });
 
-  // Tauri event listeners
-  let unlistenToken: UnlistenFn | null = null;
-  let unlistenDone: UnlistenFn | null = null;
-  let unlistenError: UnlistenFn | null = null;
-
-  // Initialize event listeners
-  async function initEventListeners() {
-    unlistenToken = await listen<string>("llm-token", (event) => {
-      appendStreamingContent(event.payload);
-    });
-
-    unlistenDone = await listen("llm-done", () => {
-      finishStreaming();
-    });
-
-    unlistenError = await listen<string>("llm-error", (event) => {
-      error.value = event.payload;
-      isStreaming.value = false;
-    });
+  // Load settings from database
+  async function loadSettings() {
+    isLoading.value = true;
+    try {
+      const settings = await llmApi.getSettings();
+      
+      modelConfig.value = {
+        model_id: settings.provider,
+        base_url: settings.api_url,
+        model_name: settings.model,
+        api_key: settings.api_key || "",
+      };
+      
+      selectedModelId.value = settings.provider;
+      console.log("Loaded LLM settings from database:", settings);
+    } catch (e) {
+      console.error("Failed to load LLM settings:", e);
+      error.value = String(e);
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  // Clean up event listeners
-  function cleanupEventListeners() {
-    if (unlistenToken) unlistenToken();
-    if (unlistenDone) unlistenDone();
-    if (unlistenError) unlistenError();
+  // Initialize sidecar on store creation
+  async function initializeSidecar() {
+    if (sidecarStarted.value || isStarting.value) return;
+    
+    isStarting.value = true;
+    try {
+      const status = await llmApi.getSidecarStatus();
+      if (status) {
+        sidecarStarted.value = true;
+        console.log("Sidecar already running on port:", status);
+      } else {
+        const port = await llmApi.startSidecar();
+        sidecarStarted.value = true;
+        console.log("Sidecar started on port:", port);
+      }
+    } catch (e) {
+      console.error("Failed to start sidecar:", e);
+      error.value = String(e);
+    } finally {
+      isStarting.value = false;
+    }
   }
 
   // Actions
@@ -68,119 +90,130 @@ export const useLlmStore = defineStore("llm", () => {
 
   function clearMessages() {
     messages.value = [];
+    streamingContent.value = "";
     error.value = null;
   }
 
   function setStreaming(streaming: boolean) {
     isStreaming.value = streaming;
-  }
-
-  function appendStreamingContent(content: string) {
-    currentStreamingContent.value += content;
-  }
-
-  function finishStreaming() {
-    // Add the streaming content as an assistant message
-    if (currentStreamingContent.value) {
-      messages.value.push({
-        role: "assistant",
-        content: currentStreamingContent.value,
-      });
+    if (!streaming) {
+      streamingContent.value = "";
     }
-    currentStreamingContent.value = "";
-    isStreaming.value = false;
   }
 
-  async function sendMessage(content: string, projectId?: string) {
-    // Add user message
+  function updateStreamingContent(content: string) {
+    streamingContent.value = content;
+  }
+
+  async function sendMessage(content: string, systemPrompt?: string) {
     addMessage({ role: "user", content });
 
-    // Start streaming
+    if (!modelConfig.value) {
+      error.value = "LLM config is not set. Please set it in settings.";
+      return;
+    }
+
+    if (!sidecarStarted.value) {
+      await initializeSidecar();
+    }
+
     isStreaming.value = true;
+    streamingContent.value = "";
     error.value = null;
 
-    // Get the model to use (selectedModelId takes precedence, then selectedModel)
-    const modelToUse = selectedModelId.value || selectedModel.value;
-    console.log("[llmStore] sendMessage - modelToUse:", modelToUse, "selectedModelId:", selectedModelId.value, "selectedModel:", selectedModel.value);
-
     try {
-      await llmApi.chat(
-        messages.value,
-        projectId,
-        modelToUse
+      const chatMessages: LlmMessage[] = [];
+      
+      if (systemPrompt) {
+        chatMessages.push({ role: "system", content: systemPrompt });
+      }
+      
+      chatMessages.push(...messages.value);
+
+      // Use streaming API
+      const response = await llmApi.chatWithLlmStream(
+        chatMessages,
+        0.7,
+        undefined
       );
+
+      streamingContent.value = response;
+      addMessage({ role: "assistant", content: response });
     } catch (e) {
       error.value = String(e);
+    } finally {
       isStreaming.value = false;
+      streamingContent.value = "";
     }
   }
 
-  async function saveApiKey(model: string, apiKey: string) {
-    await llmApi.saveKey(model, apiKey);
-    apiKeyStatus.value[model] = true;
-  }
-
-  async function deleteApiKey(model: string) {
-    await llmApi.deleteKey(model);
-    apiKeyStatus.value[model] = false;
-  }
-
-  async function checkKeyStatus(model: string) {
-    const hasKey = await llmApi.getKeyStatus(model);
-    apiKeyStatus.value[model] = hasKey;
-  }
-
-  async function saveModelConfig(modelId: string, config: ModelConfig) {
-    await llmApi.saveModelConfig(config);
-    modelConfigs.value[modelId] = config;
-  }
-
-  async function getModelConfig(modelId: string): Promise<ModelConfig | null> {
-    const config = await llmApi.getModelConfig(modelId);
-    if (config) {
-      modelConfigs.value[modelId] = config;
-    }
-    return config;
-  }
-
-  async function loadAllModelConfigs() {
-    // Load configs for all known models
-    const modelIds = Object.keys(DEFAULT_MODEL_CONFIGS);
-    for (const modelId of modelIds) {
-      const config = await llmApi.getModelConfig(modelId);
-      if (config) {
-        modelConfigs.value[modelId] = config;
+  async function saveModelConfig(config: ModelConfig) {
+    modelConfig.value = config;
+    
+    try {
+      // Save to database (doesn't need sidecar)
+      await llmApi.saveSettings(
+        config.model_id || "openai",
+        config.api_key || "",
+        config.base_url,
+        config.model_name
+      );
+      
+      console.log("LLM settings saved to database");
+      
+      // Try to update sidecar config (requires sidecar to be running)
+      if (sidecarStarted.value) {
+        try {
+          await llmApi.updateConfig(
+            config.model_id || "openai",
+            config.api_key || "",
+            config.base_url,
+            config.model_name
+          );
+          console.log("Sidecar config updated");
+        } catch (sidecarError) {
+          console.warn("Sidecar not available, will use config on next restart:", sidecarError);
+        }
+      } else {
+        // Try to initialize sidecar
+        await initializeSidecar();
+        if (sidecarStarted.value) {
+          await llmApi.updateConfig(
+            config.model_id || "openai",
+            config.api_key || "",
+            config.base_url,
+            config.model_name
+          );
+        }
       }
+    } catch (e) {
+      console.error("Failed to save config:", e);
+      error.value = String(e);
     }
   }
-
-  // Initialize on store creation
-  initEventListeners();
 
   return {
     // State
     messages,
     isStreaming,
-    currentStreamingContent,
-    apiKeyStatus,
+    streamingContent,
     settingsOpen,
     selectedModel,
     error,
-    modelConfigs,
+    modelConfig,
     selectedModelId,
+    sidecarStarted,
+    isStarting,
+    isLoading,
+    
     // Actions
+    loadSettings,
+    initializeSidecar,
     addMessage,
     clearMessages,
     setStreaming,
-    appendStreamingContent,
-    finishStreaming,
+    updateStreamingContent,
     sendMessage,
-    saveApiKey,
-    deleteApiKey,
-    checkKeyStatus,
     saveModelConfig,
-    getModelConfig,
-    loadAllModelConfigs,
-    cleanupEventListeners,
   };
 });

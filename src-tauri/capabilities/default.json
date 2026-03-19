@@ -5,6 +5,24 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "shell:allow-spawn",
+    "shell:allow-execute",
+    "shell:allow-open",
+    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "http://127.0.0.1:8765/**"
+        },
+        {
+          "url": "https://api.openai.com/**"
+        },
+        {
+          "url": "https://api.anthropic.com/**"
+        }
+      ]
+    }
   ]
 }

@@ -21,9 +21,9 @@ watch(
   }
 );
 
-// Scroll to bottom when streaming content changes
+// Also scroll when streaming content updates
 watch(
-  () => llmStore.currentStreamingContent,
+  () => llmStore.streamingContent,
   async () => {
     await nextTick();
     scrollToBottom();
@@ -60,8 +60,9 @@ function closeSettings() {
   llmStore.settingsOpen = false;
 }
 
-onMounted(() => {
+onMounted(async () => {
   scrollToBottom();
+  await llmStore.loadSettings();
 });
 </script>
 
@@ -102,6 +103,14 @@ onMounted(() => {
         :message="message"
       />
 
+      <!-- Streaming content display -->
+      <div
+        v-if="llmStore.streamingContent"
+        class="bg-[var(--bg-tertiary)] rounded-lg p-3 text-[var(--text-primary)] whitespace-pre-wrap"
+      >
+        {{ llmStore.streamingContent }}<span class="inline-block w-2 h-4 bg-[var(--accent-primary)] animate-pulse" />
+      </div>
+
       <!-- Streaming indicator -->
       <div v-if="llmStore.isStreaming" class="flex items-center gap-2 text-[var(--text-tertiary)]">
         <div class="flex gap-1">
@@ -111,12 +120,6 @@ onMounted(() => {
         </div>
         <span class="text-sm">AI 正在思考...</span>
       </div>
-
-      <!-- Current streaming content -->
-      <ChatMessage
-        v-if="llmStore.currentStreamingContent"
-        :message="{ role: 'assistant', content: llmStore.currentStreamingContent }"
-      />
     </div>
 
     <!-- Error message -->

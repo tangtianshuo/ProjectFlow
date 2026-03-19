@@ -257,28 +257,50 @@ export const milestoneApi = {
 };
 
 // LLM API functions
+export interface LlmSettings {
+  id: number;
+  provider: string;
+  api_key: string | null;
+  api_url: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const llmApi = {
-  saveKey: (model: string, apiKey: string): Promise<void> =>
-    invoke("llm_save_key", { model, apiKey }),
+  startSidecar: (): Promise<number> => invoke("start_sidecar"),
 
-  getKeyStatus: (model: string): Promise<boolean> =>
-    invoke("llm_get_key_status", { model }),
+  getSidecarStatus: (): Promise<number | null> => invoke("get_sidecar_status"),
 
-  deleteKey: (model: string): Promise<void> =>
-    invoke("llm_delete_key", { model }),
+  getSettings: (): Promise<LlmSettings> => invoke("get_llm_settings"),
 
-  chat: (
+  saveSettings: (provider: string, apiKey: string, apiUrl: string, model: string): Promise<void> =>
+    invoke("save_llm_settings", { provider, apiKey, apiUrl, model }),
+
+  updateConfig: (provider: string, apiKey: string, apiUrl: string, model: string): Promise<void> =>
+    invoke("update_llm_config_sidecar", { provider, apiKey, apiUrl, model }),
+
+  chatWithLlm: (
     messages: LlmMessage[],
-    projectId?: string,
-    model?: string
-  ): Promise<void> =>
-    invoke("llm_chat", { messages, projectId, model }),
+    temperature?: number,
+    maxTokens?: number
+  ): Promise<{ content: string; model: string; provider: string }> =>
+    invoke("chat_with_llm_sidecar", { messages, temperature: temperature ?? 0.7, maxTokens }),
 
-  getModels: (): Promise<ModelInfo[]> => invoke("llm_get_models"),
+  chatWithLlmStream: (
+    messages: LlmMessage[],
+    temperature?: number,
+    maxTokens?: number
+  ): Promise<string> =>
+    invoke("chat_with_llm_stream", { messages, temperature: temperature ?? 0.7, maxTokens }),
 
-  saveModelConfig: (config: ModelConfig): Promise<void> =>
-    invoke("llm_save_model_config", { config }),
-
-  getModelConfig: (modelId: string): Promise<ModelConfig | null> =>
-    invoke("llm_get_model_config", { modelId }),
+  chatWithLlmLegacy: (
+    provider: string,
+    apiKey: string,
+    apiUrl: string,
+    model: string,
+    message: string,
+    systemPrompt?: string
+  ): Promise<string> =>
+    invoke("chat_with_llm", { provider, apiKey, apiUrl, model, message, systemPrompt }),
 };

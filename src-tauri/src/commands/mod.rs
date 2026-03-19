@@ -2,8 +2,6 @@ use crate::db::Database;
 use crate::models::*;
 use tauri::State;
 
-pub mod llm;
-
 // Project commands
 #[tauri::command]
 pub fn create_project(
